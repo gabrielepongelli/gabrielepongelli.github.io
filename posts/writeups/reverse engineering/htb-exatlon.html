@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title> HTB - Exatlon —   | Gabriele Pongelli</title>
+<meta name="description" content="This is the blog of Gabriele Pongelli.">
+<meta name="keywords" content="">
+<link rel="canonical" href="/posts/writeups/reverse%20engineering/htb-exatlon">
+    <link rel="stylesheet" href="/assets/css/github-markdown.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/github.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" integrity="sha512-NhSC1YmyruXifcj/KFRWoC561YpHpc5Jtzgvbuzx5VozKpWvQ+4nXhPdFgmx8xqexRcpAglTj9sIBWINXa8x5w==" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet">
+    </head>
+    <body>
+        <div class="wrapper">
+        <header class="header">
+    <div class="navigation">
+        <a href="/" class="logo">Gabriele Pongelli</a>
+        <ul class="menu">
+            
+            
+            <li class="menu__entry"><a href="/">Home</a></li>
+            
+            <li class="menu__entry"><a href="/posts">Posts</a></li>
+            
+            <li class="menu__entry"><a href="/projects">Projects</a></li>
+            
+            <li class="menu__entry"><a href="/about">About</a></li>
+            
+        </ul>
+    </div>
+    <ul class="social-links">
+    
+    <a href="mailto:pongelligabriele@gmail.com" class="social-links__entry" target="_blank">
+    <em class="fa fa-envelope-square"></em>
+    </a>
+    
+    
+    <a href="https://github.com/gabrielepongelli" class="social-links__entry" target="_blank">
+    <em class="fab fa-github"></em>
+    </a>
+    
+    
+    <a href="https://in.linkedin.com/in/gabriele-p-68027a166" class="social-links__entry" target="_blank">
+    <em class="fab fa-linkedin"></em>
+    </a>
+    
+    </ul>
+</header>
+        <h1 class="page-title">
+<div class="page-title__text">HTB - Exatlon</div>
+<div class="page-title__subtitle"></div>
+</h1>
+
+<div class="entry-content markdown-body">
+<p>
+    <strong class="post-meta">
+        <time class="dt-published" datetime="2021-03-27T00:00:00+00:00" itemprop="datePublished">Mar 27, 2021
+        </time></strong>
+</p>
+
+<div class="post-content e-content" itemprop="articleBody">
+    <p id="fail" style="display: none;"> The flag is not correct, but don't worry I'll try my best anyway 💪🏻. Et voilà: </p>
+    <div id="secure-container" style="display: none;">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
+g/irrzzcoNsLCKanep1wFNw=</div>
+
+    <div id="flag-input-box" style="display: block;">
+        This writeup is protected. Please insert the flag to view this content.<br><br>
+        <input id="flag" type="text" value="">
+        <button id="decrypt-btn" onclick="tryDecryptPost()">Decrypt</button>
+        <br><br><br>
+    </div>
+</div>
+<a class="u-url" href="/posts/writeups/reverse%20engineering/htb-exatlon" hidden></a>
+<div id="decrypt_params">
+<script>
+let ivs = [];
+ivs[0] = '1wRTgoixAQsV/cY5lr5HqA==';
+</script>
+</div>
+<script>
+    let base64ToBytes = (b64) => {
+        const binString = atob(b64);
+        return Uint8Array.from(binString, (m) => m.codePointAt(0));
+    }
+
+    let deriveKey = async (flag) => {
+        const flagBytes = new TextEncoder().encode(flag);
+        return await window.crypto.subtle.digest("SHA-256", flagBytes);
+    }
+
+    let decrypt = async (rawKey, iv, data) => {
+        const key = await window.crypto.subtle.importKey("raw", rawKey,
+            "AES-CBC", false, ["decrypt",]);
+        return await window.crypto.subtle.decrypt({ name: "AES-CBC", iv }, key, data);
+    }
+
+    let showPageContent = (content, fail = false) => {
+        let secureContainerNode = document.getElementById("secure-container");
+        secureContainerNode.innerHTML = content;
+        secureContainerNode.style.display = "block";
+
+        let flagInputBoxNode = document.getElementById("flag-input-box");
+        flagInputBoxNode.style.display = "none";
+
+        if (fail) {
+            const failMsgNode = document.getElementById("fail");
+            failMsgNode.style.display = "block";
+        }
+    }
+
+    let showCorrectFlagContent = async (post, key) => {
+        let postHTML = new DOMParser().parseFromString(post, "text/html").body;
+
+        for (const [idx, iv] of ivs.slice(1).entries()) {
+            const imageId = `secure-image-${idx}`;
+            let imageTag = postHTML.querySelectorAll("#" + imageId)[0];
+            try {
+                const response = await fetch(imageTag.src);
+                const encryptedImage = await response.arrayBuffer();
+                const decryptedBytes = await decrypt(key, base64ToBytes(iv), encryptedImage);
+                const objectURL = URL.createObjectURL(new Blob(
+                    [decryptedBytes], { type: 'image/png' }));
+                imageTag.src = objectURL;
+            } catch (error) {
+                console.error("An error occurred while decrypting the images inside this post: ", error);
+            }
+        }
+
+        showPageContent(postHTML.innerHTML);
+    }
+
+    let showError = (post) => {
+        showPageContent(JSON.stringify(post), true);
+    }
+
+    let modifyPageContent = async (flag) => {
+        const encryptedPost = base64ToBytes(document
+            .getElementById("secure-container").innerHTML);
+        const iv = base64ToBytes(ivs[0]);
+        const key = await deriveKey(flag);
+        try {
+            const decryptedBytes = await decrypt(key, iv, encryptedPost);
+            const decryptedPost = new TextDecoder().decode(decryptedBytes);
+
+            showCorrectFlagContent(decryptedPost, key);
+        } catch (err) {
+            showError(new TextDecoder().decode(encryptedPost));
+        }
+    }
+
+    let tryDecryptPost = () => {
+        const flag = document.getElementById("flag").value;
+        modifyPageContent(flag);
+    }
+</script>
+</div>
+        </div>
+        <footer class="about">
+    <div class="about__devider">*****</div>
+    <div class="about__text">
+        🛠️ Powered by Jekyll 🛠️
+        <br> 📖 Hosted on GitHub Pages 📖
+    </div>
+</footer>
+    </body>
+</html>
